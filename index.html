@@ -595,10 +595,68 @@
   @media (prefers-reduced-motion: reduce) { .typing span { animation: none; } }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-thumb { background: rgba(201,154,75,0.25); border-radius: 3px; }
+
+  /* Login gate */
+  .login-gate {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    padding: 20px;
+  }
+  .login-card {
+    background: var(--panel);
+    border: 1px solid rgba(201,154,75,0.3);
+    border-radius: 16px;
+    padding: 30px 26px;
+    width: 100%; max-width: 340px;
+    display: flex; flex-direction: column; gap: 12px;
+    text-align: center;
+  }
+  .login-card h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 21px;
+    color: var(--text);
+    margin: 0;
+  }
+  .login-sub { color: var(--text-dim); margin: 0 0 8px; font-size: 12.5px; }
+  .login-card input {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.25);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  .login-card input:focus { outline: none; border-color: var(--gold); }
+  .login-card button {
+    background: var(--gold);
+    border: none; border-radius: 10px;
+    color: #1c1408;
+    font-weight: 600;
+    padding: 10px 12px;
+    font-size: 14px;
+    margin-top: 4px;
+    cursor: pointer;
+  }
+  .login-card button:hover { background: var(--gold-soft); }
+  .login-card button:disabled { opacity: 0.6; cursor: default; }
+  .login-error { color: #d98a72; font-size: 12.5px; min-height: 1.1em; margin: 0; }
 </style>
 </head>
 <body>
-<div class="app">
+<div id="loginGate" class="login-gate">
+  <form id="loginForm" class="login-card">
+    <h1>Field Notes</h1>
+    <p class="login-sub">Sign in to continue</p>
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" required>
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" required>
+    <button type="submit" id="loginBtn">Sign In</button>
+    <p class="login-error" id="loginError"></p>
+  </form>
+</div>
+<div class="app" id="appRoot" style="display:none;">
   <div class="rings">
     <svg viewBox="0 0 360 360">
       <circle cx="180" cy="180" r="60"/>
@@ -617,6 +675,7 @@
       <div class="streak" id="streak"></div>
       <button class="reset-btn" id="apiKeyBtn" style="display:none;">api key</button>
       <button class="reset-btn" id="saveBtn" disabled>save</button>
+      <button class="reset-btn" id="signOutBtn">sign out</button>
     </div>
   </header>
 
@@ -1133,6 +1192,69 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+/* ================================================================
+   LOGIN GATE (Firebase Auth)
+   Sign-in is required before the app becomes visible or loads any
+   data. This uses the SAME Firebase project as the Realtime Database
+   above, so Auth just needs to be enabled on it.
+
+   ⚠️ Fill in the rest of your Firebase config below (Project settings
+   → General → "Your apps" → SDK setup and configuration → Config).
+   Then in the Firebase console go to Authentication → Sign-in method
+   and enable "Email/Password", and add a user under the Users tab —
+   that's the email/password you'll sign in with here.
+================================================================ */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "coach-45ec3.firebaseapp.com",
+  databaseURL: "https://coach-45ec3-default-rtdb.firebaseio.com",
+  projectId: "coach-45ec3",
+  storageBucket: "coach-45ec3.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+
+const loginGateEl = document.getElementById('loginGate');
+const appRootEl = document.getElementById('appRoot');
+const loginForm = document.getElementById('loginForm');
+const loginError = document.getElementById('loginError');
+const loginBtn = document.getElementById('loginBtn');
+
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  loginError.textContent = '';
+  loginBtn.disabled = true; loginBtn.textContent = 'Signing in…';
+  try {
+    await fbAuth.signInWithEmailAndPassword(
+      document.getElementById('loginEmail').value.trim(),
+      document.getElementById('loginPassword').value
+    );
+  } catch (err) {
+    loginError.textContent = 'Sign-in failed — check your email and password.';
+  } finally {
+    loginBtn.disabled = false; loginBtn.textContent = 'Sign In';
+  }
+});
+
+let appStarted = false;
+fbAuth.onAuthStateChanged((user) => {
+  if (user) {
+    loginGateEl.style.display = 'none';
+    appRootEl.style.display = '';
+    const signOutBtn = document.getElementById('signOutBtn');
+    if (signOutBtn) signOutBtn.onclick = () => fbAuth.signOut();
+    if (!appStarted) { appStarted = true; startApp(); }
+  } else {
+    appRootEl.style.display = 'none';
+    loginGateEl.style.display = '';
+  }
+});
+</script>
 <script>
 /* ================================================================
    SAVE / LOAD
@@ -2121,9 +2243,11 @@ document.querySelectorAll('.dash-lesson-tab').forEach(btn => {
   btn.addEventListener('click', () => goToTab(btn.dataset.tab));
 });
 
-loadApiKey();
-loadAllProfiles();
-loadFavorites();
+function startApp() {
+  loadApiKey();
+  loadAllProfiles();
+  loadFavorites();
+}
 </script>
 </body>
 </html>
