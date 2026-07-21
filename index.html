@@ -1216,7 +1216,6 @@ const firebaseConfig = {
   storageBucket: "coach-45ec3.firebasestorage.app",
   messagingSenderId: "276737662184",
   appId: "1:276737662184:web:90e255cbe34b89e7d23d5d"
-
 };
 firebase.initializeApp(firebaseConfig);
 const fbAuth = firebase.auth();
@@ -1606,7 +1605,7 @@ Coach: ${replyText}
 
 Respond with ONLY JSON in exactly this shape, no other text: {"notes": ["..."], "followups": ["...", "...", "..."]}`;
 
-    const response = await fetch(geminiUrl("gemini-2.5-flash"), fetchOptions({
+    const response = await fetch(geminiUrl("gemini-3.5-flash"), fetchOptions({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: { maxOutputTokens: 400 }
     }));
@@ -1864,7 +1863,7 @@ async function sendMessage(text) {
       throw new Error('missing-api-key');
     }
     const recent = messages.slice(-40);
-    const response = await fetch(geminiUrl("gemini-2.5-flash"), fetchOptions({
+    const response = await fetch(geminiUrl("gemini-3.5-flash"), fetchOptions({
       system_instruction: { parts: [{ text: buildSystemPrompt(KIDS[activeChatKid], profiles[activeChatKid], notes[activeChatKid]) }] },
       contents: toGeminiContents(recent),
       generationConfig: { maxOutputTokens: 1000 }
