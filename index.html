@@ -286,6 +286,14 @@
   .field input:focus, .field textarea.profile-input:focus { outline: none; border-color: var(--gold); }
   .field-row { display: flex; gap: 10px; }
   .field-row .field { flex: 1; }
+  .avatar-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 2px; }
+  .avatar-choice {
+    background: var(--panel-2); border: 1px solid rgba(201,154,75,0.2);
+    border-radius: 8px; width: 36px; height: 36px; font-size: 17px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .avatar-choice:hover { border-color: var(--gold); }
+  .avatar-choice.selected { border-color: var(--gold); background: rgba(201,154,75,0.18); }
   #profileForm { display: flex; flex-direction: column; gap: 16px; }
   .save-row { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
   button.save-btn {
@@ -419,6 +427,27 @@
     font-family: inherit;
   }
   .search-chip:hover { color: var(--gold-soft); border-color: var(--gold); }
+
+  /* Summary view */
+  .summary-card { display: flex; flex-direction: column; gap: 0; }
+  .summary-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .summary-generate-btn {
+    background: var(--gold); color: #1c1408; border: none; border-radius: 10px;
+    padding: 9px 16px; font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap;
+  }
+  .summary-generate-btn:hover { background: var(--gold-soft); }
+  .summary-generate-btn:disabled { opacity: 0.55; cursor: default; }
+  .summary-timestamp { font-size: 11.5px; color: var(--text-dim); }
+  .summary-empty { color: var(--text-dim); font-size: 13px; font-style: italic; text-align: center; padding: 30px 10px; }
+  .summary-section { padding: 12px 0; border-top: 1px solid rgba(201,154,75,0.12); }
+  .summary-section:first-of-type { padding-top: 0; border-top: none; }
+  .summary-section-title { font-size: 11.5px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px; }
+  .summary-section-body { font-size: 13.5px; line-height: 1.55; color: var(--text); margin: 0; white-space: pre-wrap; }
+  .summary-section.concern .summary-section-title { color: #e0a488; }
+  .summary-section.improved .summary-section-title { color: #b0d4b0; }
+  .summary-section.worse .summary-section-title { color: #e0a488; }
+  .summary-section.focus .summary-section-title { color: var(--gold-soft); }
+
   .followup-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .followup-chip {
     background: var(--panel-2);
@@ -534,6 +563,39 @@
   .learn-card ul { margin: 6px 0 0; padding-left: 18px; }
   .learn-card li { font-size: 13.5px; line-height: 1.5; margin-bottom: 5px; color: var(--text); }
   .learn-card li:last-child { margin-bottom: 0; }
+
+  .age-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .age-card {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.15);
+    border-radius: 14px;
+    padding: 22px 12px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--gold-soft);
+    cursor: pointer;
+    text-align: center;
+  }
+  .age-card:hover { border-color: rgba(201,154,75,0.4); color: var(--gold); }
+  .age-back-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+    align-self: flex-start;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .age-back-btn:hover { color: var(--gold-soft); }
   .ask-link {
     display: inline-block;
     margin-top: 10px;
@@ -689,11 +751,11 @@
   <nav class="tabs">
     <button class="tab-btn active" data-tab="dashboard"><span class="tab-icon">&#8962;</span> Dashboard</button>
     <button class="tab-btn" data-tab="chat"><span class="tab-icon">&#128172;</span> Chat</button>
+    <button class="tab-btn" data-tab="summary"><span class="tab-icon">&#128202;</span> Summary</button>
     <button class="tab-btn" data-tab="search"><span class="tab-icon">&#128269;</span> Search</button>
     <button class="tab-btn" data-tab="favorites"><span class="tab-icon">&#9733;</span> Favorites</button>
     <button class="tab-btn" data-tab="profile"><span class="tab-icon">&#9998;</span> Kid's Profile</button>
-    <button class="tab-btn" data-tab="nine"><span class="tab-icon">&#128214;</span> 9 Year Old</button>
-    <button class="tab-btn" data-tab="seven"><span class="tab-icon">&#128214;</span> 7 Year Old</button>
+    <button class="tab-btn" data-tab="learn"><span class="tab-icon">&#128214;</span> Learning Center</button>
   </nav>
 
   <!-- DASHBOARD VIEW -->
@@ -723,7 +785,7 @@
           <p class="dash-section-body" id="george-dash-lesson-title"></p>
           <div class="dash-lesson-actions">
             <button type="button" class="dash-link dash-lesson-ask" id="george-dash-lesson-btn" data-kid="george">Ask the coach</button>
-            <button type="button" class="switch-link dash-lesson-tab" id="george-dash-lesson-tab" data-tab="nine">See full guide</button>
+            <button type="button" class="switch-link dash-lesson-tab" id="george-dash-lesson-tab" data-age="9">See full guide</button>
           </div>
         </div>
 
@@ -752,7 +814,7 @@
           <p class="dash-section-body" id="charlie-dash-lesson-title"></p>
           <div class="dash-lesson-actions">
             <button type="button" class="dash-link dash-lesson-ask" id="charlie-dash-lesson-btn" data-kid="charlie">Ask the coach</button>
-            <button type="button" class="switch-link dash-lesson-tab" id="charlie-dash-lesson-tab" data-tab="nine">See full guide</button>
+            <button type="button" class="switch-link dash-lesson-tab" id="charlie-dash-lesson-tab" data-age="9">See full guide</button>
           </div>
         </div>
 
@@ -787,6 +849,31 @@
       <textarea id="input" rows="1" placeholder="What's on your mind today?"></textarea>
       <button type="submit" class="send" id="sendBtn">Send</button>
     </form>
+  </section>
+
+  <!-- SUMMARY VIEW -->
+  <section class="view" id="summaryView">
+    <div class="kid-picker" id="summaryPicker">
+      <h2>Whose summary?</h2>
+      <p class="sub">A quick read on how things are going, based on your conversations.</p>
+      <div class="kid-cards">
+        <div class="kid-card" data-kid="george">George</div>
+        <div class="kid-card" data-kid="charlie">Charlie</div>
+      </div>
+    </div>
+    <div id="summaryEdit" style="display:none;">
+      <button class="profile-back" id="summaryBackBtn">&larr; Back to George & Charlie</button>
+      <div class="dashboard-content" style="padding: 14px 20px 30px;">
+        <div class="learn-card summary-card">
+          <div class="summary-meta-row">
+            <h2 class="profile-heading" id="summaryHeading" style="margin:0;"></h2>
+            <button type="button" class="summary-generate-btn" id="summaryGenerateBtn">Generate summary</button>
+          </div>
+          <span class="summary-timestamp" id="summaryTimestamp"></span>
+          <div id="summaryBody" style="margin-top: 10px;"></div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- SEARCH VIEW -->
@@ -833,14 +920,30 @@
       <button class="profile-back" id="profileBackBtn">&larr; Back to George & Charlie</button>
       <h2 class="profile-heading" id="profileHeading"></h2>
       <form id="profileForm">
+        <div class="field">
+          <label for="p-avatar">Avatar</label>
+          <span class="hint">Pick one, or type your own emoji/initial.</span>
+          <div class="avatar-picker" id="avatarPicker"></div>
+          <input type="text" id="p-avatar" maxlength="4" placeholder="e.g. a face emoji" style="max-width: 90px;">
+        </div>
         <div class="field-row">
           <div class="field" style="max-width: 110px;">
             <label for="p-age">Age</label>
             <input type="text" id="p-age" placeholder="9">
           </div>
           <div class="field">
+            <label for="p-birthday">Birthday</label>
+            <input type="text" id="p-birthday" placeholder="e.g. March 14">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
             <label for="p-grade">Grade</label>
             <input type="text" id="p-grade" placeholder="e.g. 3rd grade">
+          </div>
+          <div class="field">
+            <label for="p-school">School</label>
+            <input type="text" id="p-school" placeholder="e.g. Riverside Elementary">
           </div>
         </div>
         <div class="field">
@@ -853,9 +956,37 @@
           <textarea class="profile-input" id="p-siblings" rows="2" placeholder="e.g. Older brother of Charlie, lives with both parents"></textarea>
         </div>
         <div class="field">
+          <label for="p-allergies">Allergies</label>
+          <input type="text" id="p-allergies" placeholder="e.g. Peanuts, bee stings">
+        </div>
+        <div class="field">
+          <label for="p-medical">Medical conditions</label>
+          <textarea class="profile-input" id="p-medical" rows="2" placeholder="e.g. Asthma, ADHD diagnosis, takes medication in the morning"></textarea>
+        </div>
+        <div class="field">
           <label for="p-personality">Personality & temperament</label>
           <span class="hint">How they're wired — sensitive, strong-willed, anxious, easygoing, intense, silly, etc.</span>
           <textarea class="profile-input" id="p-personality" rows="2" placeholder="e.g. Sensitive to criticism, very social, big feelings"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="p-learningStyle">Learning style</label>
+            <input type="text" id="p-learningStyle" placeholder="e.g. Hands-on, visual">
+          </div>
+          <div class="field">
+            <label for="p-loveLanguage">Love language</label>
+            <input type="text" id="p-loveLanguage" placeholder="e.g. Quality time">
+          </div>
+        </div>
+        <div class="field">
+          <label for="p-motivators">Rewards that motivate them</label>
+          <span class="hint">What actually works as incentive — screen time, stickers, one-on-one time, etc.</span>
+          <textarea class="profile-input" id="p-motivators" rows="2" placeholder="e.g. Extra bedtime story, picking the weekend activity"></textarea>
+        </div>
+        <div class="field">
+          <label for="p-triggers">Triggers</label>
+          <span class="hint">Situations or moments that reliably set off big reactions.</span>
+          <textarea class="profile-input" id="p-triggers" rows="2" placeholder="e.g. Being rushed in the morning, losing a game"></textarea>
         </div>
         <div class="field">
           <label for="p-interests">Interests & strengths</label>
@@ -893,9 +1024,22 @@
     </div>
   </section>
 
-  <!-- 9 YEAR OLD VIEW -->
-  <section class="view" id="nineView">
-    <div class="learn-content">
+  <!-- LEARNING CENTER VIEW -->
+  <section class="view" id="learnView">
+    <div class="learn-content" id="ageGridPanel">
+      <p class="learn-intro">A field guide organized by age. Pick an age to see what's typical and where parents tend to get stuck.</p>
+      <div class="age-grid">
+        <button type="button" class="age-card" data-age="7">Age 7</button>
+        <button type="button" class="age-card" data-age="8">Age 8</button>
+        <button type="button" class="age-card" data-age="9">Age 9</button>
+        <button type="button" class="age-card" data-age="10">Age 10</button>
+        <button type="button" class="age-card" data-age="11">Age 11</button>
+        <button type="button" class="age-card" data-age="12">Age 12</button>
+      </div>
+    </div>
+
+    <div class="learn-content age-panel" id="agePanel-9" data-age-panel="9" style="display:none;">
+    <button type="button" class="age-back-btn">&larr; All ages</button>
     <p class="learn-intro">A field guide to what's developmentally typical for a boy at 9 — and where parents most often get stuck. Tap anything to bring it into the chat.</p>
 
     <div class="learn-card">
@@ -1037,11 +1181,9 @@
       <p>Most day-to-day friction is normal. It's worth talking to a pediatrician, school counselor, or therapist if you notice a sharp change in mood or behavior, signs of anxiety or depression, persistent sleep or appetite changes, or anything that suggests bullying, abuse, or self-harm.</p>
     </div>
     </div>
-  </section>
 
-  <!-- 7 YEAR OLD VIEW -->
-  <section class="view" id="sevenView">
-    <div class="learn-content">
+    <div class="learn-content age-panel" id="agePanel-7" data-age-panel="7" style="display:none;">
+    <button type="button" class="age-back-btn">&larr; All ages</button>
     <p class="learn-intro">What's typical for a boy at 7, and where this age tends to trip parents up. Tap anything to bring it into the chat.</p>
 
     <div class="learn-card">
@@ -1181,6 +1323,46 @@
     <div class="learn-card">
       <h3>When to loop in a professional</h3>
       <p>Most of this is developmentally normal. Check in with a pediatrician, school counselor, or therapist if you see persistent regression, intense or escalating fears, sudden withdrawal, or anything suggesting bullying or abuse.</p>
+    </div>
+    </div>
+
+    <div class="learn-content age-panel" id="agePanel-8" data-age-panel="8" style="display:none;">
+    <button type="button" class="age-back-btn">&larr; All ages</button>
+    <p class="learn-intro">A dedicated field guide for age 8 is coming soon. In the meantime, ask the coach directly for guidance tailored to an 8-year-old.</p>
+    <div class="learn-card">
+      <h3>Coming soon</h3>
+      <p>We're still building out the full set of lessons for this age. Use the button below to bring an 8-year-old-specific question straight into the chat.</p>
+      <button class="ask-link" data-prompt="Can you walk me through what's developmentally typical for an 8-year-old boy, and what should actually worry me versus not?">Ask the coach about this</button>
+    </div>
+    </div>
+
+    <div class="learn-content age-panel" id="agePanel-10" data-age-panel="10" style="display:none;">
+    <button type="button" class="age-back-btn">&larr; All ages</button>
+    <p class="learn-intro">A dedicated field guide for age 10 is coming soon. In the meantime, ask the coach directly for guidance tailored to a 10-year-old.</p>
+    <div class="learn-card">
+      <h3>Coming soon</h3>
+      <p>We're still building out the full set of lessons for this age. Use the button below to bring a 10-year-old-specific question straight into the chat.</p>
+      <button class="ask-link" data-prompt="Can you walk me through what's developmentally typical for a 10-year-old boy, and what should actually worry me versus not?">Ask the coach about this</button>
+    </div>
+    </div>
+
+    <div class="learn-content age-panel" id="agePanel-11" data-age-panel="11" style="display:none;">
+    <button type="button" class="age-back-btn">&larr; All ages</button>
+    <p class="learn-intro">A dedicated field guide for age 11 is coming soon. In the meantime, ask the coach directly for guidance tailored to an 11-year-old.</p>
+    <div class="learn-card">
+      <h3>Coming soon</h3>
+      <p>We're still building out the full set of lessons for this age. Use the button below to bring an 11-year-old-specific question straight into the chat.</p>
+      <button class="ask-link" data-prompt="Can you walk me through what's developmentally typical for an 11-year-old boy, and what should actually worry me versus not?">Ask the coach about this</button>
+    </div>
+    </div>
+
+    <div class="learn-content age-panel" id="agePanel-12" data-age-panel="12" style="display:none;">
+    <button type="button" class="age-back-btn">&larr; All ages</button>
+    <p class="learn-intro">A dedicated field guide for age 12 is coming soon. In the meantime, ask the coach directly for guidance tailored to a 12-year-old.</p>
+    <div class="learn-card">
+      <h3>Coming soon</h3>
+      <p>We're still building out the full set of lessons for this age. Use the button below to bring a 12-year-old-specific question straight into the chat.</p>
+      <button class="ask-link" data-prompt="Can you walk me through what's developmentally typical for a 12-year-old boy, and what should actually worry me versus not?">Ask the coach about this</button>
     </div>
     </div>
   </section>
@@ -1484,11 +1666,13 @@ async function callWithFallback(systemText, recentMsgs, maxTokens) {
 }
 
 const KIDS = { george: 'George', charlie: 'Charlie' };
-const PROFILE_FIELDS = ['age','grade','pronouns','siblings','personality','interests','goals','challenges','other'];
+const PROFILE_FIELDS = ['avatar','age','birthday','grade','school','pronouns','siblings','allergies','medical','personality','learningStyle','loveLanguage','motivators','triggers','interests','goals','challenges','other'];
+const AVATAR_CHOICES = ['\u{1F466}','\u{1F467}','\u{1F9D2}','\u{1F984}','\u26BD','\u{1F3A8}','\u{1F3AE}','\u{1F4DA}','\u{1F433}','\u{1F996}','\u{1F680}','\u2B50'];
 
 function chatKey(kid) { return `field-notes-messages-${kid}`; }
 function profileKey(kid) { return `field-notes-profile-${kid}`; }
 function notesKey(kid) { return `field-notes-notes-${kid}`; }
+function summaryKey(kid) { return `field-notes-summary-${kid}`; }
 const MAX_NOTES = 60;
 const FAVORITES_KEY = 'field-notes-favorites';
 const FAVORITE_CATEGORIES = ['Bedtime', 'Homework & School', 'Screen Time', 'Emotions & Anxiety', 'Behavior', 'Siblings', 'General'];
@@ -1509,10 +1693,18 @@ Your approach:
   if (hasProfile) {
     base += `\n\nHere is what the parent has shared about ${kidName} so far (treat as background, don't just recite it back):\n`;
     if (profile.age) base += `- Age: ${profile.age}\n`;
+    if (profile.birthday) base += `- Birthday: ${profile.birthday}\n`;
     if (profile.grade) base += `- Grade: ${profile.grade}\n`;
+    if (profile.school) base += `- School: ${profile.school}\n`;
     if (profile.pronouns) base += `- Pronouns: ${profile.pronouns}\n`;
     if (profile.siblings) base += `- Siblings/family setup: ${profile.siblings}\n`;
+    if (profile.allergies) base += `- Allergies (safety-relevant, mention if ever relevant to advice): ${profile.allergies}\n`;
+    if (profile.medical) base += `- Medical conditions (safety-relevant, keep in mind when giving advice): ${profile.medical}\n`;
     if (profile.personality) base += `- Personality/temperament: ${profile.personality}\n`;
+    if (profile.learningStyle) base += `- Learning style: ${profile.learningStyle}\n`;
+    if (profile.loveLanguage) base += `- Love language: ${profile.loveLanguage}\n`;
+    if (profile.motivators) base += `- Rewards/incentives that motivate them: ${profile.motivators}\n`;
+    if (profile.triggers) base += `- Known triggers for big reactions: ${profile.triggers}\n`;
     if (profile.interests) base += `- Interests/strengths: ${profile.interests}\n`;
     if (profile.challenges) base += `- Current challenges/focus areas: ${profile.challenges}\n`;
     if (profile.other) base += `- Other context: ${profile.other}\n`;
@@ -1545,6 +1737,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById(btn.dataset.tab + 'View').classList.add('active');
     if (btn.dataset.tab === 'dashboard') renderDashboard();
     if (btn.dataset.tab === 'favorites') renderFavorites();
+    if (btn.dataset.tab === 'learn') showAgeGrid();
   });
 });
 
@@ -1555,6 +1748,32 @@ function goToTab(tabName) {
   if (btn) btn.classList.add('active');
   document.getElementById(tabName + 'View').classList.add('active');
 }
+
+// ---- Learning Center (age cards) ----
+function showAgeGrid() {
+  document.getElementById('ageGridPanel').style.display = '';
+  document.querySelectorAll('.age-panel').forEach(p => p.style.display = 'none');
+}
+
+function showAgePanel(age) {
+  document.getElementById('ageGridPanel').style.display = 'none';
+  document.querySelectorAll('.age-panel').forEach(p => p.style.display = 'none');
+  const panel = document.querySelector(`.age-panel[data-age-panel="${age}"]`);
+  if (panel) panel.style.display = '';
+}
+
+function goToLearnAge(age) {
+  goToTab('learn');
+  showAgePanel(age);
+}
+
+document.querySelectorAll('.age-card').forEach(btn => {
+  btn.addEventListener('click', () => showAgePanel(btn.dataset.age));
+});
+
+document.querySelectorAll('.age-back-btn').forEach(btn => {
+  btn.addEventListener('click', showAgeGrid);
+});
 
 // ---- Chat elements ----
 const chatPicker = document.getElementById('chatPicker');
@@ -1590,7 +1809,7 @@ async function selectChatKid(kid) {
   chatLog.style.display = 'flex';
   form.style.display = 'flex';
   activeKidLabel.textContent = KIDS[kid];
-  kidAvatar.textContent = (KIDS[kid] || '?').charAt(0);
+  kidAvatar.textContent = kidAvatarGlyph(kid);
   saveBtn.disabled = false;
   await loadHistory();
   const age = (profiles[kid] && profiles[kid].age) ? profiles[kid].age.trim() : '';
@@ -2077,10 +2296,33 @@ function refreshProfileMeta() {
     const el = document.getElementById(kid + '-meta');
     const p = profiles[kid] || {};
     const bits = [];
+    if (p.avatar && p.avatar.trim()) bits.push(p.avatar.trim());
     if (p.age) bits.push(`age ${p.age}`);
     if (p.grade) bits.push(p.grade);
     el.textContent = bits.length ? bits.join(' · ') : 'no profile yet';
   });
+}
+
+const avatarPickerEl = document.getElementById('avatarPicker');
+const avatarInputEl = document.getElementById('p-avatar');
+avatarPickerEl.innerHTML = AVATAR_CHOICES.map(a => `<button type="button" class="avatar-choice" data-avatar="${a}">${a}</button>`).join('');
+function syncAvatarPickerSelection() {
+  const current = avatarInputEl.value.trim();
+  avatarPickerEl.querySelectorAll('.avatar-choice').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.avatar === current);
+  });
+}
+avatarPickerEl.querySelectorAll('.avatar-choice').forEach(btn => {
+  btn.addEventListener('click', () => {
+    avatarInputEl.value = btn.dataset.avatar;
+    syncAvatarPickerSelection();
+  });
+});
+avatarInputEl.addEventListener('input', syncAvatarPickerSelection);
+
+function kidAvatarGlyph(kid) {
+  const a = (profiles[kid] && profiles[kid].avatar) ? profiles[kid].avatar.trim() : '';
+  return a || (KIDS[kid] || '?').charAt(0);
 }
 
 function openProfileEdit(kid) {
@@ -2092,6 +2334,7 @@ function openProfileEdit(kid) {
     const el = document.getElementById('p-' + f);
     if (el) el.value = p[f] || '';
   });
+  syncAvatarPickerSelection();
   profilePicker.style.display = 'none';
   profileEdit.classList.add('active');
   renderMemoryList(kid);
@@ -2189,6 +2432,107 @@ profileForm.addEventListener('submit', async (e) => {
   setTimeout(() => savedNote.classList.remove('show'), 2200);
 });
 
+// ---- Summary ----
+const summaryPicker = document.getElementById('summaryPicker');
+const summaryEdit = document.getElementById('summaryEdit');
+const summaryBackBtn = document.getElementById('summaryBackBtn');
+const summaryHeading = document.getElementById('summaryHeading');
+const summaryGenerateBtn = document.getElementById('summaryGenerateBtn');
+const summaryTimestamp = document.getElementById('summaryTimestamp');
+const summaryBody = document.getElementById('summaryBody');
+let summaryActiveKid = null;
+
+document.querySelectorAll('#summaryPicker .kid-card').forEach(card => {
+  card.addEventListener('click', () => openSummaryEdit(card.dataset.kid));
+});
+summaryBackBtn.addEventListener('click', () => {
+  summaryActiveKid = null;
+  summaryEdit.style.display = 'none';
+  summaryPicker.style.display = 'flex';
+});
+
+const SUMMARY_SECTIONS = [
+  { key: 'concern', cls: 'concern', title: 'Biggest parenting concern' },
+  { key: 'improved', cls: 'improved', title: 'What improved' },
+  { key: 'worse', cls: 'worse', title: 'What became worse' },
+  { key: 'focus', cls: 'focus', title: 'Recommended focus this week' }
+];
+
+async function openSummaryEdit(kid) {
+  summaryActiveKid = kid;
+  summaryHeading.textContent = `${KIDS[kid]}'s Summary`;
+  summaryPicker.style.display = 'none';
+  summaryEdit.style.display = 'flex';
+  summaryGenerateBtn.disabled = false;
+  summaryGenerateBtn.textContent = 'Generate summary';
+  summaryBody.innerHTML = '<p class="summary-empty">Loading\u2026</p>';
+  summaryTimestamp.textContent = '';
+  try {
+    const result = await storage.get(summaryKey(kid), false);
+    const saved = (result && result.value) ? JSON.parse(result.value) : null;
+    if (saved && saved.data) {
+      renderSummary(saved.data, saved.at);
+    } else {
+      summaryBody.innerHTML = '<p class="summary-empty">No summary yet \u2014 tap "Generate summary" to get a read on how things are going.</p>';
+    }
+  } catch (e) {
+    summaryBody.innerHTML = '<p class="summary-empty">No summary yet \u2014 tap "Generate summary" to get a read on how things are going.</p>';
+  }
+}
+
+function renderSummary(data, at) {
+  summaryTimestamp.textContent = at ? `Generated ${relativeDay(at) || ''}` : '';
+  summaryBody.innerHTML = SUMMARY_SECTIONS.map(s => `
+    <div class="summary-section ${s.cls}">
+      <p class="summary-section-title">${escapeHtml(s.title)}</p>
+      <p class="summary-section-body">${escapeHtml((data[s.key] && data[s.key].trim()) || 'Not enough conversation yet to say.')}</p>
+    </div>`).join('');
+}
+
+function buildSummaryPrompt(kidName, msgs) {
+  const convo = msgs.slice(-80).map(m => `${m.role === 'user' ? 'Parent' : 'Coach'}: ${m.content}`).join('\n');
+  return `You are reviewing a parent's ongoing chat history with a parenting coach about their child ${kidName}, to produce a short check-in summary. Base everything strictly on the conversation below \u2014 don't invent specifics that weren't mentioned.
+
+Conversation history:
+${convo}
+
+Respond with ONLY JSON in exactly this shape, no other text:
+{"concern": "1-2 sentences on the single biggest concern raised", "improved": "1-2 sentences on what has gotten better recently, or 'Nothing notable yet' if unclear", "worse": "1-2 sentences on what has gotten worse or stayed stuck, or 'Nothing notable' if unclear", "focus": "1-2 sentences recommending the single most useful thing to focus on this week"}`;
+}
+
+summaryGenerateBtn.addEventListener('click', async () => {
+  const kid = summaryActiveKid;
+  if (!kid) return;
+  if (!apiKey && !mistralApiKey) {
+    summaryBody.innerHTML = '<p class="summary-empty">I need a Gemini API key to generate this. Click "api key" at the top to add yours.</p>';
+    return;
+  }
+  summaryGenerateBtn.disabled = true;
+  summaryGenerateBtn.textContent = 'Generating\u2026';
+  summaryBody.innerHTML = '<p class="summary-empty">Reading through the conversation history\u2026</p>';
+  try {
+    const result = await storage.get(chatKey(kid), false);
+    const kidMessages = (result && result.value) ? JSON.parse(result.value) : [];
+    if (kidMessages.length === 0) {
+      summaryBody.innerHTML = `<p class="summary-empty">No conversations with ${KIDS[kid]} yet \u2014 chat with the coach a bit first.</p>`;
+      return;
+    }
+    const prompt = buildSummaryPrompt(KIDS[kid], kidMessages);
+    const { text } = await callWithFallback('', [{ role: 'user', content: prompt }], 700);
+    const cleaned = text.replace(/```json|```/g, '').trim();
+    const data = JSON.parse(cleaned);
+    const at = new Date().toISOString();
+    try { await storage.set(summaryKey(kid), JSON.stringify({ data, at }), false); } catch (e) { /* best effort */ }
+    if (summaryActiveKid === kid) renderSummary(data, at);
+  } catch (e) {
+    console.error('Summary generation failed', e);
+    summaryBody.innerHTML = `<p class="summary-empty">Couldn't generate a summary just now (${escapeHtml(e.message || 'unknown error')}). Try again.</p>`;
+  } finally {
+    summaryGenerateBtn.disabled = false;
+    summaryGenerateBtn.textContent = 'Generate summary';
+  }
+});
+
 // ---- Learn tabs quick-ask ----
 document.querySelectorAll('.ask-link').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -2265,15 +2609,15 @@ function relativeDay(iso) {
 
 function pickLessonCard(kid) {
   const age = parseInt((profiles[kid] && profiles[kid].age) || '', 10);
-  const tabId = (!isNaN(age) && age <= 7) ? 'sevenView' : 'nineView';
-  const cards = Array.from(document.querySelectorAll('#' + tabId + ' .learn-card')).filter(c => c.querySelector('.ask-link'));
+  const lessonAge = (!isNaN(age) && age <= 7) ? '7' : '9';
+  const cards = Array.from(document.querySelectorAll(`.age-panel[data-age-panel="${lessonAge}"] .learn-card`)).filter(c => c.querySelector('.ask-link'));
   if (cards.length === 0) return null;
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   const kidOffset = Object.keys(KIDS).indexOf(kid);
   const idx = ((dayOfYear + kidOffset) % cards.length + cards.length) % cards.length;
   const card = cards[idx];
   return {
-    tab: tabId === 'nineView' ? 'nine' : 'seven',
+    age: lessonAge,
     title: card.querySelector('h3').textContent,
     prompt: card.querySelector('.ask-link').dataset.prompt
   };
@@ -2303,7 +2647,7 @@ async function renderDashboard() {
     if (lesson) {
       lessonTitleEl.textContent = lesson.title;
       lessonBtn.dataset.prompt = lesson.prompt;
-      lessonTabBtn.dataset.tab = lesson.tab;
+      lessonTabBtn.dataset.age = lesson.age;
       lessonBtn.style.display = '';
       lessonTabBtn.style.display = '';
     } else {
@@ -2374,7 +2718,7 @@ document.querySelectorAll('.dash-lesson-ask').forEach(btn => {
 });
 
 document.querySelectorAll('.dash-lesson-tab').forEach(btn => {
-  btn.addEventListener('click', () => goToTab(btn.dataset.tab));
+  btn.addEventListener('click', () => goToLearnAge(btn.dataset.age));
 });
 
 function startApp() {
