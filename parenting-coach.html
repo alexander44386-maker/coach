@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Notes — A Parenting Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #17242b;
+    --panel: #1f323b;
+    --panel-2: #24363f;
+    --gold: #c99a4b;
+    --gold-soft: #e7c77e;
+    --text: #ede6d8;
+    --text-dim: #9fb0b6;
+    --user-bubble: #3a2e22;
+    --user-border: #6b4f2c;
+    --coach-bubble: #24343c;
+    --ring: rgba(201, 154, 75, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow: hidden;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 640px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .rings {
+    position: absolute;
+    top: -80px; right: -120px;
+    width: 360px; height: 360px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .rings svg { width: 100%; height: 100%; }
+  .rings circle { fill: none; stroke: var(--ring); }
+
+  header {
+    position: relative; z-index: 1;
+    padding: 22px 20px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .title-block h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 21px;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+  .title-block p {
+    margin: 3px 0 0;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .streak {
+    font-size: 11.5px;
+    color: var(--gold-soft);
+    border: 1px solid rgba(201,154,75,0.3);
+    padding: 4px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .reset-btn {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 12px; cursor: pointer; padding: 4px 6px;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .reset-btn:hover { color: var(--gold-soft); }
+  .reset-btn:disabled { opacity: 0.35; cursor: default; text-decoration: none; }
+
+  nav.tabs {
+    display: flex;
+    gap: 2px;
+    padding: 0 14px;
+    border-bottom: 1px solid rgba(201,154,75,0.15);
+    position: relative; z-index: 1;
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+  nav.tabs button {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 10px 12px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+  }
+  nav.tabs button.active { color: var(--gold-soft); border-bottom-color: var(--gold); }
+  nav.tabs button:hover:not(.active) { color: var(--text); }
+  .tab-icon { display: inline-block; margin-right: 4px; font-size: 12px; opacity: 0.85; }
+
+  .view { flex: 1; overflow-y: auto; position: relative; z-index: 1; display: none; }
+  .view.active { display: flex; flex-direction: column; }
+
+  /* Chat view */
+  .chat-subheader {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px;
+    border-bottom: 1px solid rgba(201,154,75,0.12);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .chat-subheader strong { color: var(--gold-soft); font-weight: 600; }
+  .chat-kid-id { display: flex; align-items: center; gap: 8px; }
+  .kid-avatar {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--panel-2); border: 1px solid rgba(201,154,75,0.35);
+    color: var(--gold-soft); font-family: 'Fraunces', serif; font-weight: 600; font-size: 12.5px;
+    flex-shrink: 0;
+  }
+  #activeKidAge { color: var(--text-dim); font-weight: 400; }
+  .switch-link {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 0;
+  }
+  .switch-link:hover { color: var(--gold-soft); }
+
+  #chatLog {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 18px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .msg-wrap { display: flex; flex-direction: column; max-width: 82%; }
+  .msg-wrap.user-wrap { align-self: flex-end; align-items: flex-end; }
+  .msg-wrap.coach-wrap { align-self: flex-start; align-items: flex-start; }
+  .msg { max-width: 100%; padding: 11px 14px; border-radius: 14px; line-height: 1.5; font-size: 14.5px; white-space: pre-wrap; }
+  .msg.coach { background: var(--coach-bubble); border-bottom-left-radius: 4px; }
+  .msg.user { background: var(--user-bubble); border: 1px solid var(--user-border); border-bottom-right-radius: 4px; }
+  .msg.highlight-flash { animation: flashHighlight 2.4s ease; }
+  @keyframes flashHighlight { 0% { box-shadow: 0 0 0 2px var(--gold-soft); } 100% { box-shadow: 0 0 0 0 transparent; } }
+  .star-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 13px; padding: 3px 4px 0;
+    line-height: 1; opacity: 0.7;
+  }
+  .star-btn:hover { color: var(--gold-soft); opacity: 1; }
+  .star-btn.starred { color: var(--gold); opacity: 1; }
+
+  .typing { align-self: flex-start; color: var(--text-dim); font-size: 13px; padding: 0 4px; }
+  .date-sep { text-align: center; color: var(--text-dim); font-size: 11.5px; letter-spacing: 0.03em; margin: 6px 0 2px; text-transform: uppercase; }
+  .typing span { animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+  form#chatForm {
+    display: flex;
+    gap: 8px;
+    padding: 14px 18px 18px;
+    border-top: 1px solid rgba(201,154,75,0.15);
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+  textarea {
+    flex: 1;
+    resize: none;
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.2);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 11px 13px;
+    font-family: inherit;
+    font-size: 14.5px;
+    line-height: 1.4;
+    max-height: 120px;
+  }
+  textarea:focus { outline: none; border-color: var(--gold); }
+  button.send {
+    background: var(--gold);
+    color: #1c1408;
+    border: none;
+    border-radius: 12px;
+    padding: 0 18px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  button.send:disabled { opacity: 0.5; cursor: default; }
+  button.send:hover:not(:disabled) { background: var(--gold-soft); }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    gap: 10px;
+  }
+  .empty-state h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 18px; margin: 0; color: var(--gold-soft); }
+  .empty-state p { color: var(--text-dim); font-size: 13.5px; max-width: 320px; margin: 0; line-height: 1.5; }
+
+  /* Kid picker (used for chat + profile) */
+  .kid-picker {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 30px 20px;
+    text-align: center;
+  }
+  .kid-picker h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; margin: 0; color: var(--gold-soft); }
+  .kid-picker p.sub { color: var(--text-dim); font-size: 13px; margin: -8px 0 4px; }
+  .kid-cards { display: flex; gap: 14px; }
+  .kid-card {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.25);
+    border-radius: 16px;
+    padding: 22px 30px;
+    cursor: pointer;
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 110px;
+  }
+  .kid-card:hover { border-color: var(--gold); color: var(--gold-soft); }
+  .kid-card .kid-meta { display: block; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; color: var(--text-dim); margin-top: 4px; }
+
+  /* Profile edit view */
+  #profileEdit { padding: 18px 20px 30px; gap: 16px; display: none; }
+  #profileEdit.active { display: flex; flex-direction: column; }
+  .profile-back {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 12.5px; cursor: pointer; padding: 0; text-align: left;
+    text-decoration: underline; text-underline-offset: 3px; margin-bottom: 2px;
+  }
+  .profile-back:hover { color: var(--gold-soft); }
+  .profile-heading { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--gold-soft); margin: 0; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gold-soft);
+    font-weight: 600;
+  }
+  .field .hint { font-size: 11.5px; color: var(--text-dim); font-weight: 400; text-transform: none; letter-spacing: normal; margin-top: -3px; }
+  .field input, .field textarea.profile-input {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+  }
+  .field input:focus, .field textarea.profile-input:focus { outline: none; border-color: var(--gold); }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  #profileForm { display: flex; flex-direction: column; gap: 16px; }
+  .save-row { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+  button.save-btn {
+    background: var(--gold);
+    color: #1c1408;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+  }
+  button.save-btn:hover { background: var(--gold-soft); }
+  .saved-note { font-size: 12px; color: var(--gold-soft); opacity: 0; transition: opacity 0.3s; }
+  .saved-note.show { opacity: 1; }
+
+  .memory-section {
+    margin-top: 6px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(201,154,75,0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .memory-heading {
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gold-soft);
+    margin: 0;
+  }
+  .memory-sub { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin: -4px 0 2px; }
+  .memory-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .memory-list:empty::after {
+    content: 'No notes yet — these fill in automatically as you chat.';
+    font-size: 12.5px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .memory-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.15);
+    border-radius: 10px;
+    padding: 9px 10px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .memory-item span { flex: 1; }
+  .memory-item .memory-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .memory-item button {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 13px; line-height: 1; padding: 2px; flex-shrink: 0;
+  }
+  .memory-item button.delete-btn { font-size: 16px; }
+  .memory-item button:hover { color: var(--gold-soft); }
+  .memory-item.editing { flex-direction: column; align-items: stretch; gap: 8px; }
+  .memory-item .edit-input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--gold);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 7px 9px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+  }
+  .memory-item .edit-input:focus { outline: none; }
+  .memory-item .edit-row-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .memory-item .edit-row-actions button {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .memory-item .save-edit-btn { background: var(--gold); color: #1c1408; }
+  .memory-item .save-edit-btn:hover { background: var(--gold-soft); color: #1c1408; }
+  .memory-item .cancel-edit-btn { background: var(--panel-2); border: 1px solid rgba(201,154,75,0.25); color: var(--text-dim); }
+  .add-note-row { display: flex; gap: 8px; margin-top: 2px; }
+  .add-note-row input {
+    flex: 1;
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 8px 11px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .add-note-row input:focus { outline: none; border-color: var(--gold); }
+  .add-note-btn {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.3);
+    color: var(--gold-soft);
+    border-radius: 10px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .add-note-btn:hover { background: rgba(201,154,75,0.15); }
+
+  /* Search & Favorites views */
+  .search-content { padding: 20px 20px 30px; gap: 14px; display: flex; flex-direction: column; }
+  .search-heading { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; margin: 0; color: var(--gold-soft); }
+  .search-sub { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; margin: -6px 0 0; }
+  .search-row { display: flex; gap: 8px; }
+  .search-row input {
+    flex: 1;
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .search-row input:focus { outline: none; border-color: var(--gold); }
+  .search-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -4px; }
+  .search-chip {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.25);
+    color: var(--text-dim);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .search-chip:hover { color: var(--gold-soft); border-color: var(--gold); }
+  .followup-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .followup-chip {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.25);
+    color: var(--gold-soft);
+    border-radius: 16px;
+    padding: 5px 11px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+  }
+  .followup-chip:hover { background: rgba(201,154,75,0.15); border-color: var(--gold); }
+
+  .continue-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.3);
+    border-radius: 14px;
+    padding: 13px 16px;
+    margin: 0 0 4px;
+  }
+  .continue-banner-text { font-size: 13px; line-height: 1.4; color: var(--text); }
+  .continue-banner-text strong { color: var(--gold-soft); }
+  .continue-banner-btn {
+    background: var(--gold); color: #1c1408; border: none; border-radius: 10px;
+    padding: 8px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  }
+  .continue-banner-btn:hover { background: var(--gold-soft); }
+  .search-status { font-size: 12.5px; color: var(--text-dim); font-style: italic; margin: 4px 0 0; }
+  .result-card {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.15);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+  }
+  .result-card:hover { border-color: var(--gold); }
+  .result-meta { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-dim); }
+  .result-kid { color: var(--gold-soft); font-weight: 600; }
+  .result-snippet { font-size: 13.5px; line-height: 1.5; color: var(--text); margin: 0; }
+  .result-snippet mark { background: rgba(201,154,75,0.35); color: var(--text); border-radius: 3px; padding: 0 2px; }
+  .results-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .fav-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
+  .fav-group-title {
+    font-size: 11.5px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.05em; margin: 14px 0 0;
+  }
+  .fav-group-title:first-child { margin-top: 0; }
+  .fav-card {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.15);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .fav-meta { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--text-dim); gap: 8px; }
+  .fav-text { font-size: 13.5px; line-height: 1.5; color: var(--text); margin: 0; white-space: pre-wrap; }
+  .fav-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .fav-category-select {
+    background: var(--panel); border: 1px solid rgba(201,154,75,0.25); color: var(--gold-soft);
+    border-radius: 8px; padding: 5px 8px; font-size: 12px; font-family: inherit;
+  }
+  .fav-remove-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 15px; padding: 2px; }
+  .fav-remove-btn:hover { color: var(--gold-soft); }
+  .fav-empty, .search-empty { color: var(--text-dim); font-size: 13px; font-style: italic; text-align: center; padding: 30px 10px; }
+
+  /* Dashboard view */
+  .dashboard-content { padding: 20px 20px 30px; gap: 22px; display: flex; flex-direction: column; }
+  .dash-card { display: flex; flex-direction: column; gap: 0; }
+  .dash-kid-name {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; color: var(--gold-soft);
+    margin: 0 0 12px; display: flex; align-items: baseline; gap: 8px;
+  }
+  .dash-kid-meta { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 400; color: var(--text-dim); }
+  .dash-section {
+    display: flex; flex-direction: column; gap: 5px;
+    padding: 12px 0; border-top: 1px solid rgba(201,154,75,0.12);
+  }
+  .dash-section:first-of-type { padding-top: 0; border-top: none; }
+  .dash-section:last-of-type { padding-bottom: 0; }
+  .dash-section-title {
+    font-size: 11.5px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.05em; margin: 0;
+  }
+  .dash-section-body { font-size: 13.5px; line-height: 1.5; color: var(--text); margin: 0; white-space: pre-wrap; }
+  .dash-lesson-actions { display: flex; gap: 16px; margin-top: 4px; }
+  .dash-when { color: var(--text-dim); }
+
+  /* Learn view */
+  .learn-content { padding: 20px 20px 30px; gap: 22px; display: flex; flex-direction: column; }
+  .learn-intro { font-size: 13px; color: var(--text-dim); line-height: 1.5; margin: 0; }
+  .learn-card {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.15);
+    border-radius: 14px;
+    padding: 16px 17px;
+  }
+  .learn-card h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 15.5px;
+    margin: 0 0 8px;
+    color: var(--gold-soft);
+  }
+  .learn-card p { font-size: 13.5px; line-height: 1.55; margin: 0 0 8px; color: var(--text); }
+  .learn-card p:last-child { margin-bottom: 0; }
+  .learn-card ul { margin: 6px 0 0; padding-left: 18px; }
+  .learn-card li { font-size: 13.5px; line-height: 1.5; margin-bottom: 5px; color: var(--text); }
+  .learn-card li:last-child { margin-bottom: 0; }
+  .ask-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--gold-soft);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+  }
+  .ask-link:hover { color: var(--gold); }
+  .dash-link {
+    display: inline-block;
+    font-size: 12.5px;
+    color: var(--gold-soft);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+  }
+  .dash-link:hover { color: var(--gold); }
+
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10, 15, 18, 0.65);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10; padding: 20px;
+  }
+  .modal-box {
+    background: var(--panel);
+    border: 1px solid rgba(201,154,75,0.3);
+    border-radius: 16px;
+    padding: 22px 22px 20px;
+    max-width: 380px;
+    width: 100%;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .modal-box h3 { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--gold-soft); margin: 0; }
+  .modal-box p { font-size: 12.5px; line-height: 1.55; color: var(--text-dim); margin: 0; }
+  .modal-mono { font-family: monospace; color: var(--gold-soft); }
+  .modal-box input {
+    background: var(--panel-2);
+    border: 1px solid rgba(201,154,75,0.25);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: monospace;
+    font-size: 13px;
+  }
+  .modal-box input:focus { outline: none; border-color: var(--gold); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+  .modal-btn-primary, .modal-btn-secondary {
+    border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .modal-btn-primary { background: var(--gold); color: #1c1408; border: none; }
+  .modal-btn-primary:hover { background: var(--gold-soft); }
+  .modal-btn-secondary { background: none; border: 1px solid rgba(201,154,75,0.25); color: var(--text-dim); }
+  .modal-btn-secondary:hover { color: var(--gold-soft); border-color: var(--gold); }
+
+  @media (prefers-reduced-motion: reduce) { .typing span { animation: none; } }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(201,154,75,0.25); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="rings">
+    <svg viewBox="0 0 360 360">
+      <circle cx="180" cy="180" r="60"/>
+      <circle cx="180" cy="180" r="95"/>
+      <circle cx="180" cy="180" r="130"/>
+      <circle cx="180" cy="180" r="165"/>
+    </svg>
+  </div>
+
+  <header>
+    <div class="title-block">
+      <h1>Field Notes</h1>
+      <p>Your parenting coach, for George & Charlie</p>
+    </div>
+    <div class="header-actions">
+      <div class="streak" id="streak"></div>
+      <button class="reset-btn" id="apiKeyBtn" style="display:none;">api key</button>
+      <button class="reset-btn" id="saveBtn" disabled>save</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="dashboard"><span class="tab-icon">&#8962;</span> Dashboard</button>
+    <button class="tab-btn" data-tab="chat"><span class="tab-icon">&#128172;</span> Chat</button>
+    <button class="tab-btn" data-tab="search"><span class="tab-icon">&#128269;</span> Search</button>
+    <button class="tab-btn" data-tab="favorites"><span class="tab-icon">&#9733;</span> Favorites</button>
+    <button class="tab-btn" data-tab="profile"><span class="tab-icon">&#9998;</span> Kid's Profile</button>
+    <button class="tab-btn" data-tab="nine"><span class="tab-icon">&#128214;</span> 9 Year Old</button>
+    <button class="tab-btn" data-tab="seven"><span class="tab-icon">&#128214;</span> 7 Year Old</button>
+  </nav>
+
+  <!-- DASHBOARD VIEW -->
+  <section class="view active" id="dashboardView">
+    <div class="dashboard-content">
+      <div class="continue-banner" id="continueBanner" style="display:none;">
+        <p class="continue-banner-text" id="continueBannerText"></p>
+        <button type="button" class="continue-banner-btn" id="continueBannerBtn">Continue</button>
+      </div>
+      <p class="learn-intro">Where things stand with George and Charlie, at a glance.</p>
+
+      <div class="learn-card dash-card" id="george-dash-card">
+        <h2 class="dash-kid-name">George<span class="dash-kid-meta" id="george-dash-meta"></span></h2>
+
+        <div class="dash-section">
+          <p class="dash-section-title">Current parenting goals</p>
+          <p class="dash-section-body" id="george-dash-goals"></p>
+        </div>
+
+        <div class="dash-section">
+          <p class="dash-section-title">Active challenges</p>
+          <p class="dash-section-body" id="george-dash-challenges"></p>
+        </div>
+
+        <div class="dash-section">
+          <p class="dash-section-title">Recommended lesson today</p>
+          <p class="dash-section-body" id="george-dash-lesson-title"></p>
+          <div class="dash-lesson-actions">
+            <button type="button" class="dash-link dash-lesson-ask" id="george-dash-lesson-btn" data-kid="george">Ask the coach</button>
+            <button type="button" class="switch-link dash-lesson-tab" id="george-dash-lesson-tab" data-tab="nine">See full guide</button>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <p class="dash-section-title">Last conversation</p>
+          <p class="dash-section-body" id="george-dash-last"></p>
+          <button type="button" class="dash-link dash-continue-btn" data-kid="george">Continue chat &rarr;</button>
+        </div>
+      </div>
+
+      <div class="learn-card dash-card" id="charlie-dash-card">
+        <h2 class="dash-kid-name">Charlie<span class="dash-kid-meta" id="charlie-dash-meta"></span></h2>
+
+        <div class="dash-section">
+          <p class="dash-section-title">Current parenting goals</p>
+          <p class="dash-section-body" id="charlie-dash-goals"></p>
+        </div>
+
+        <div class="dash-section">
+          <p class="dash-section-title">Active challenges</p>
+          <p class="dash-section-body" id="charlie-dash-challenges"></p>
+        </div>
+
+        <div class="dash-section">
+          <p class="dash-section-title">Recommended lesson today</p>
+          <p class="dash-section-body" id="charlie-dash-lesson-title"></p>
+          <div class="dash-lesson-actions">
+            <button type="button" class="dash-link dash-lesson-ask" id="charlie-dash-lesson-btn" data-kid="charlie">Ask the coach</button>
+            <button type="button" class="switch-link dash-lesson-tab" id="charlie-dash-lesson-tab" data-tab="nine">See full guide</button>
+          </div>
+        </div>
+
+        <div class="dash-section">
+          <p class="dash-section-title">Last conversation</p>
+          <p class="dash-section-body" id="charlie-dash-last"></p>
+          <button type="button" class="dash-link dash-continue-btn" data-kid="charlie">Continue chat &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAT VIEW -->
+  <section class="view" id="chatView">
+    <div class="kid-picker" id="chatPicker">
+      <h2>Who's this chat about?</h2>
+      <p class="sub">I'll keep George and Charlie's conversations separate.</p>
+      <div class="kid-cards">
+        <div class="kid-card" data-kid="george">George</div>
+        <div class="kid-card" data-kid="charlie">Charlie</div>
+      </div>
+    </div>
+    <div class="chat-subheader" id="chatSubheader" style="display:none;">
+      <div class="chat-kid-id">
+        <span class="kid-avatar" id="kidAvatar"></span>
+        <span>Talking about <strong id="activeKidLabel"></strong><span id="activeKidAge"></span></span>
+      </div>
+      <button class="switch-link" id="switchKidBtn">Switch kid</button>
+    </div>
+    <div id="chatLog" style="display:none;"></div>
+    <form id="chatForm" style="display:none;">
+      <textarea id="input" rows="1" placeholder="What's on your mind today?"></textarea>
+      <button type="submit" class="send" id="sendBtn">Send</button>
+    </form>
+  </section>
+
+  <!-- SEARCH VIEW -->
+  <section class="view" id="searchView">
+    <div class="search-content">
+      <h2 class="search-heading">Search past conversations</h2>
+      <p class="search-sub">Look back through everything you and the coach have talked about, across both kids.</p>
+      <form id="searchForm" class="search-row">
+        <input type="text" id="searchInput" placeholder="Try 'bedtime', 'homework', 'anxiety'...">
+        <button type="submit" class="add-note-btn">Search</button>
+      </form>
+      <div class="search-chips">
+        <button type="button" class="search-chip" data-q="Homework">Homework</button>
+        <button type="button" class="search-chip" data-q="Bedtime">Bedtime</button>
+        <button type="button" class="search-chip" data-q="Screen time">Screen time</button>
+        <button type="button" class="search-chip" data-q="Fear">Fear</button>
+        <button type="button" class="search-chip" data-q="Anxiety">Anxiety</button>
+      </div>
+      <div id="searchResults"></div>
+    </div>
+  </section>
+
+  <!-- FAVORITES VIEW -->
+  <section class="view" id="favoritesView">
+    <div class="search-content">
+      <h2 class="search-heading">Saved advice</h2>
+      <p class="search-sub">Coach replies you've starred, organized by category. Change a category anytime.</p>
+      <div id="favoritesBody"></div>
+    </div>
+  </section>
+
+  <!-- PROFILE VIEW -->
+  <section class="view" id="profileView">
+    <div class="kid-picker" id="profilePicker">
+      <h2>Whose profile?</h2>
+      <p class="sub">Pick a name to view or edit their basics.</p>
+      <div class="kid-cards">
+        <div class="kid-card" data-kid="george">George<span class="kid-meta" id="george-meta"></span></div>
+        <div class="kid-card" data-kid="charlie">Charlie<span class="kid-meta" id="charlie-meta"></span></div>
+      </div>
+    </div>
+
+    <div id="profileEdit">
+      <button class="profile-back" id="profileBackBtn">&larr; Back to George & Charlie</button>
+      <h2 class="profile-heading" id="profileHeading"></h2>
+      <form id="profileForm">
+        <div class="field-row">
+          <div class="field" style="max-width: 110px;">
+            <label for="p-age">Age</label>
+            <input type="text" id="p-age" placeholder="9">
+          </div>
+          <div class="field">
+            <label for="p-grade">Grade</label>
+            <input type="text" id="p-grade" placeholder="e.g. 3rd grade">
+          </div>
+        </div>
+        <div class="field">
+          <label for="p-pronouns">Pronouns</label>
+          <input type="text" id="p-pronouns" placeholder="e.g. he/him">
+        </div>
+        <div class="field">
+          <label for="p-siblings">Siblings & family setup</label>
+          <span class="hint">Birth order, who's in the household, co-parenting arrangements — whatever's relevant.</span>
+          <textarea class="profile-input" id="p-siblings" rows="2" placeholder="e.g. Older brother of Charlie, lives with both parents"></textarea>
+        </div>
+        <div class="field">
+          <label for="p-personality">Personality & temperament</label>
+          <span class="hint">How they're wired — sensitive, strong-willed, anxious, easygoing, intense, silly, etc.</span>
+          <textarea class="profile-input" id="p-personality" rows="2" placeholder="e.g. Sensitive to criticism, very social, big feelings"></textarea>
+        </div>
+        <div class="field">
+          <label for="p-interests">Interests & strengths</label>
+          <textarea class="profile-input" id="p-interests" rows="2" placeholder="e.g. Loves drawing, soccer, reading fantasy books"></textarea>
+        </div>
+        <div class="field">
+          <label for="p-goals">Current parenting goals</label>
+          <span class="hint">What you're actively working toward with him right now \u2014 shows up on the dashboard.</span>
+          <textarea class="profile-input" id="p-goals" rows="2" placeholder="e.g. Fewer bedtime battles, more independent homework time"></textarea>
+        </div>
+        <div class="field">
+          <label for="p-challenges">Current challenges or focus areas</label>
+          <span class="hint">What's actually bringing you here — behavior, school, friendships, screen time, sleep, etc.</span>
+          <textarea class="profile-input" id="p-challenges" rows="3" placeholder="e.g. Meltdowns over homework, trouble with a friend group"></textarea>
+        </div>
+        <div class="field">
+          <label for="p-other">Anything else worth knowing</label>
+          <textarea class="profile-input" id="p-other" rows="2" placeholder="Diagnoses, big life changes, parenting approach you're trying to stick to, etc."></textarea>
+        </div>
+        <div class="save-row">
+          <button type="submit" class="save-btn">Save</button>
+          <span class="saved-note" id="savedNote">Saved</span>
+        </div>
+      </form>
+
+      <div class="memory-section">
+        <h3 class="memory-heading">Memory notes</h3>
+        <p class="memory-sub">Things the coach has picked up on from your conversations — separate from what you typed above. Remove anything that's wrong or outdated.</p>
+        <ul class="memory-list" id="memoryList"></ul>
+        <form id="addNoteForm" class="add-note-row">
+          <input type="text" id="addNoteInput" placeholder="Add a note yourself...">
+          <button type="submit" class="add-note-btn">Add</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 YEAR OLD VIEW -->
+  <section class="view" id="nineView">
+    <div class="learn-content">
+    <p class="learn-intro">A field guide to what's developmentally typical for a boy at 9 — and where parents most often get stuck. Tap anything to bring it into the chat.</p>
+
+    <div class="learn-card">
+      <h3>What's typical at this age</h3>
+      <p>Nine is often called the "concrete but maturing" stage: boys can reason logically about real things but still struggle with abstract hypotheticals. His need for independence is rising fast, even as he still relies heavily on adults for regulation and reassurance.</p>
+      <ul>
+        <li>Peer friendships become a central source of identity and self-worth</li>
+        <li>A strong, sometimes rigid sense of fairness ("that's not fair!")</li>
+        <li>Growing self-consciousness and comparison to peers</li>
+        <li>Wanting more autonomy — choosing clothes, activities, opinions — while still needing structure</li>
+        <li>For some boys, early signs of the runway toward puberty</li>
+      </ul>
+      <button class="ask-link" data-prompt="Can you walk me through what's developmentally typical for a 9-year-old boy, and what should actually worry me versus not?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Independence vs. structure</h3>
+      <p>His push for more freedom is real and healthy, but a 9-year-old still needs clear, consistent limits — he just wants a say in how those limits work.</p>
+      <ul>
+        <li>Offer choices within boundaries rather than open-ended freedom</li>
+        <li>Involve him in setting rules; boys hold to rules more when they helped write them</li>
+        <li>Expect testing — it's practice for independence, not defiance for its own sake</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 9-year-old son keeps pushing back on rules and wanting more independence. How do I give him appropriate freedom without losing structure?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Friendships & social dynamics</h3>
+      <p>Friend groups start to feel high-stakes. Exclusion, shifting alliances, and "best friend" drama are common among boys this age and can hit hard, even if they look minor from the outside.</p>
+      <ul>
+        <li>Resist fixing it immediately — help him think through his own next step first</li>
+        <li>Validate the feeling before problem-solving ("that sounds really lonely")</li>
+        <li>Watch for patterns of exclusion that persist beyond normal friction</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 9-year-old son is having friendship trouble. How involved should I get, and how do I support him without taking over?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Screens, homework & responsibility</h3>
+      <p>This is often the age where screen time, homework independence, and chores turn into daily negotiations. Consistency matters more than the specific rule you pick.</p>
+      <ul>
+        <li>Set expectations before conflict starts, not in the middle of it</li>
+        <li>Natural consequences teach better than punishments disconnected from the behavior</li>
+        <li>Homework struggles are often about executive function, not laziness — worth ruling out first</li>
+      </ul>
+      <button class="ask-link" data-prompt="I'm struggling with screen time and homework rules with my 9-year-old son. What actually works at this age?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Video games & online play</h3>
+      <p>Multiplayer games and voice chat with friends often become a real social space for boys around 9, not just entertainment — which makes blanket "no screens" rules land differently than parents expect.</p>
+      <ul>
+        <li>Ask what he's playing and who with, the same way you'd ask about a friend's house</li>
+        <li>Set clear windows for play rather than vague "a little while" limits</li>
+        <li>Keep an eye on in-game chat and purchases without turning it into surveillance</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 9-year-old son wants more time playing video games online with friends. How do I set healthy limits around this?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Big feelings & meltdowns</h3>
+      <p>Emotional regulation is still developing. A 9-year-old boy having a meltdown over something "small" is often overwhelmed, not manipulative — and boys are sometimes given less room to express this than they need.</p>
+      <ul>
+        <li>Co-regulate first (calm your own tone) before trying to problem-solve</li>
+        <li>Name the feeling out loud; it helps him build the vocabulary to do it himself</li>
+        <li>Debrief after he's calmed down, not during the storm</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 9-year-old son has big emotional meltdowns that seem out of proportion to what triggered them. How should I be handling these in the moment and afterward?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Lying, honesty & responsibility</h3>
+      <p>Nine-year-olds understand truth-telling well, but they're also more capable of strategic lying than younger kids — often to avoid disappointing you or dodge a consequence, not out of malice.</p>
+      <ul>
+        <li>React to the lie separately from the original mistake; punishing both together teaches him to hide things better next time</li>
+        <li>Make honesty the lower-stakes choice — a calmer response to truth than to being caught</li>
+        <li>Praise coming clean, even late, more than you punish the original slip-up</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 9-year-old son has been lying about things, sometimes to avoid getting in trouble. How should I respond in a way that encourages honesty?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Body changes & growing up</h3>
+      <p>Some boys start noticing early physical changes around this age. Even without visible signs yet, this is a good age to start normalizing conversations about bodies before things feel awkward.</p>
+      <ul>
+        <li>Short, factual, ongoing conversations beat one big "the talk"</li>
+        <li>Let him set the pace — answer what's asked without over-explaining</li>
+        <li>Check in with a pediatrician if changes seem notably early or are causing distress</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 9-year-old son is starting to show early signs of puberty, or I want to get ahead of that conversation. How should I approach it?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Sports, competition & performance pressure</h3>
+      <p>Sports, clubs, and academics can start to feel more competitive at this age, and boys often begin tying their self-worth to performance, winning, or being seen as tough.</p>
+      <ul>
+        <li>Separate praise for effort from outcomes ("you really stuck with that" vs. "you won")</li>
+        <li>Watch for signs an activity has stopped being fun for him versus you</li>
+        <li>Model handling your own setbacks calmly — he's absorbing more of this than it seems</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 9-year-old son seems to be getting a lot of pressure or anxiety around sports/school performance. How do I help without dismissing it?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Respect, boundaries & how he treats others</h3>
+      <p>Nine is a good age to reinforce, in concrete terms, how he treats friends, siblings, and adults — teasing, roughhousing, and testing boundaries are common, and clear feedback now shapes habits that stick.</p>
+      <ul>
+        <li>Name specific behavior rather than character ("that hurt him" vs. "you're mean")</li>
+        <li>Talk through consent basics in everyday terms — asking before touching, taking, or grabbing</li>
+        <li>Praise him directly when you see him being kind or including someone</li>
+      </ul>
+      <button class="ask-link" data-prompt="I want to reinforce respect and boundaries with my 9-year-old son — how he treats friends and siblings. Where should I focus?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Money, allowance & wanting things</h3>
+      <p>Nine is a common age to introduce an allowance or more deliberate money concepts, as boys can now grasp saving, trade-offs, and delayed gratification much better than a few years earlier.</p>
+      <ul>
+        <li>Tie an allowance to age-appropriate responsibility, not just chores-for-cash</li>
+        <li>Let him make small spending mistakes now, while the stakes are low</li>
+        <li>Use his own wants ("I want that game") as a natural entry point for saving conversations</li>
+      </ul>
+      <button class="ask-link" data-prompt="I want to start teaching my 9-year-old son about money, allowance, and saving. Where should I start?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Sibling rivalry & comparison</h3>
+      <p>As boys this age become more aware of fairness and status, sibling comparisons ("you always let him...") tend to intensify, especially if siblings are close in age.</p>
+      <ul>
+        <li>Avoid direct comparisons between siblings, even well-meaning ones</li>
+        <li>Address conflicts one-on-one rather than litigating "who started it" in front of both</li>
+        <li>Give each boy some individual time and attention outside the sibling dynamic</li>
+      </ul>
+      <button class="ask-link" data-prompt="There's a lot of sibling rivalry and comparison going on with my 9-year-old son. How should I handle it?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>When to loop in a professional</h3>
+      <p>Most day-to-day friction is normal. It's worth talking to a pediatrician, school counselor, or therapist if you notice a sharp change in mood or behavior, signs of anxiety or depression, persistent sleep or appetite changes, or anything that suggests bullying, abuse, or self-harm.</p>
+    </div>
+    </div>
+  </section>
+
+  <!-- 7 YEAR OLD VIEW -->
+  <section class="view" id="sevenView">
+    <div class="learn-content">
+    <p class="learn-intro">What's typical for a boy at 7, and where this age tends to trip parents up. Tap anything to bring it into the chat.</p>
+
+    <div class="learn-card">
+      <h3>What's typical at this age</h3>
+      <p>Seven is a settling-in stage: the wobbliness of early childhood is fading, and boys are becoming steadier, more logical, and more self-directed — while still leaning heavily on imagination and routine.</p>
+      <ul>
+        <li>Thinking becomes more logical, but still very literal and rule-bound</li>
+        <li>Reading and academic skills often become a source of pride or worry</li>
+        <li>Friendships are simpler than at 9 — usually one or two close friends rather than shifting groups</li>
+        <li>Big fears (dark, monsters, death, getting in trouble) are common and often surface at bedtime</li>
+        <li>Still craves closeness with parents even while asserting more independence</li>
+      </ul>
+      <button class="ask-link" data-prompt="Can you walk me through what's developmentally typical for a 7-year-old boy, and what should actually worry me versus not?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Rules, fairness & literal thinking</h3>
+      <p>Seven-year-old boys take rules very literally and can get distressed by perceived unfairness or inconsistency, even more so than they can articulate why.</p>
+      <ul>
+        <li>Be concrete and consistent — vague or shifting rules cause more friction than strict ones</li>
+        <li>Explain the "why" briefly; he's starting to want reasons, not just commands</li>
+        <li>Expect some tattling and rule-policing of siblings or friends — it's a sign of moral development, not just annoyance</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son is very rigid about rules and fairness and gets upset easily when things feel unfair. How should I handle this?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>School, reading & confidence</h3>
+      <p>This is often when boys start comparing themselves academically to peers. A rough patch with reading or math can quickly turn into "I'm bad at this" thinking if not caught early.</p>
+      <ul>
+        <li>Praise effort and strategy over innate ability ("you kept trying different ways" beats "you're so smart")</li>
+        <li>Loop in the teacher early if you notice avoidance or distress around schoolwork</li>
+        <li>Keep homework time low-conflict; confidence matters more than perfection at this stage</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son is getting frustrated or losing confidence around schoolwork or reading. How should I support him?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Fears, worries & bedtime</h3>
+      <p>Nighttime fears, worries about death, or sudden clinginess are very common at 7 as boys start grasping bigger, scarier concepts for the first time.</p>
+      <ul>
+        <li>Take the fear seriously rather than dismissing it as silly</li>
+        <li>Keep a predictable, calm bedtime routine — novelty and rushing tend to amplify anxiety</li>
+        <li>Give small, concrete tools (a nightlight, a "worry jar," checking under the bed once) rather than long reassurances</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son has developed nighttime fears or worries and it's affecting bedtime. What can I do?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Friendships & sharing</h3>
+      <p>Friendships at 7 tend to be close but simple, often built around shared play rather than deep conversation. Conflicts flare fast and resolve fast.</p>
+      <ul>
+        <li>Coach turn-taking and losing gracefully — both are still genuinely hard at this age</li>
+        <li>Let minor conflicts resolve on their own before stepping in</li>
+        <li>Model naming feelings out loud; his emotional vocabulary is still developing</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son is having some friendship or sharing struggles. How involved should I get?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Imagination, magical thinking & reality</h3>
+      <p>Seven-year-old boys are transitioning out of heavy magical thinking but still blend fantasy and reality more than adults realize — this is normal and often shows up in play, storytelling, or the occasional "creative" retelling of events.</p>
+      <ul>
+        <li>Distinguish between imaginative play (healthy) and stories used to avoid a consequence (worth gently naming)</li>
+        <li>Enjoy his imagination rather than rushing to correct it — it supports creativity and problem-solving</li>
+        <li>Introduce concepts like "make-believe vs. what really happened" in a light, non-shaming way</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son blends imagination and reality a lot, or tells creative versions of events. Is this normal and how should I respond?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Rough-and-tumble play & physical energy</h3>
+      <p>Boys this age often burn off big feelings and excess energy through physical, rowdy play — wrestling, chasing, mock-fighting. It's normal and even helps regulation, but it needs clear limits.</p>
+      <ul>
+        <li>Set concrete rules (no hitting the face, stop when someone says stop) rather than banning rough play outright</li>
+        <li>Watch for the line between play-fighting and real frustration boiling over</li>
+        <li>Build in regular outlets for physical energy so it doesn't all surface at bedtime or homework time</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son is very physical and rowdy with rough play and wrestling. How much should I limit it and how do I keep it safe?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Screens & first video games</h3>
+      <p>Seven is often when boys start asking for their own games and devices rather than just watching. Interest can spike fast, and it's easier to set the pattern now than to walk it back later.</p>
+      <ul>
+        <li>Decide on limits and content ratings together with him before he starts, not after a conflict</li>
+        <li>Play alongside him sometimes so you know what he's actually into</li>
+        <li>Keep screens out of the bedtime routine — they tend to disrupt sleep at this age</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son is asking for more video games and screen time. How do I set this up well from the start?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Chores & responsibility</h3>
+      <p>Seven is a good age to build real, ongoing responsibilities — boys this age want to feel capable and useful, even if follow-through is still inconsistent.</p>
+      <ul>
+        <li>Start with a small number of simple, repeatable chores rather than a long list</li>
+        <li>Expect to remind and re-teach; the goal is habit-building, not perfect execution</li>
+        <li>Tie responsibility to trust and privileges rather than payment alone</li>
+      </ul>
+      <button class="ask-link" data-prompt="I want to start giving my 7-year-old son regular chores and responsibilities. What's realistic to expect at this age?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Sibling relationships</h3>
+      <p>At 7, sibling dynamics are often about attention and access to parents as much as anything else — rivalry usually spikes right after a change like a new baby, move, or schedule shift.</p>
+      <ul>
+        <li>Give brief, predictable one-on-one time with each parent, even 10 minutes</li>
+        <li>Avoid casting one sibling as "the mature one" and another as "the difficult one"</li>
+        <li>Let small squabbles resolve without a verdict from you when it's safe to do so</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son is having a hard time with a sibling — lots of rivalry or attention-seeking. How should I approach it?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Big life transitions</h3>
+      <p>Seven-year-old boys are old enough to understand a change is happening (a move, a new sibling, divorce, a new school) but often lack the words for how it's affecting them, so it tends to show up as behavior instead.</p>
+      <ul>
+        <li>Name the change plainly and let him ask questions over time, not just once</li>
+        <li>Expect some regression (clinginess, tantrums, sleep issues) as normal, temporary, and not a sign you're doing it wrong</li>
+        <li>Keep as many routines stable as possible during the transition itself</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son is going through a big life transition and it's showing up in his behavior. How can I support him through it?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>Body awareness, privacy & respect</h3>
+      <p>Seven is a common age for boys to develop more modesty and curiosity about bodies and privacy — both his own and other people's — which is a healthy, expected part of development.</p>
+      <ul>
+        <li>Use correct, simple terms for body parts rather than euphemisms</li>
+        <li>Reinforce consent basics early: his body, his say, and the same respect for others, in age-appropriate ways</li>
+        <li>Answer curiosity plainly and briefly rather than treating it as shameful or alarming</li>
+      </ul>
+      <button class="ask-link" data-prompt="My 7-year-old son is showing more curiosity or modesty around bodies and privacy. How should I talk about this at his age?">Ask the coach about this</button>
+    </div>
+
+    <div class="learn-card">
+      <h3>When to loop in a professional</h3>
+      <p>Most of this is developmentally normal. Check in with a pediatrician, school counselor, or therapist if you see persistent regression, intense or escalating fears, sudden withdrawal, or anything suggesting bullying or abuse.</p>
+    </div>
+    </div>
+  </section>
+
+  <div class="modal-overlay" id="apiKeyModal" style="display:none;">
+    <div class="modal-box">
+      <h3>Gemini API key</h3>
+      <p>This app needs a free Gemini API key to reach the model. Get one at <span class="modal-mono">aistudio.google.com/apikey</span>. It's saved only in this browser's local storage and sent only to Google's API \u2014 never anywhere else.</p>
+      <input type="password" id="apiKeyInput" placeholder="AIza...">
+      <div class="modal-actions">
+        <button type="button" class="modal-btn-secondary" id="apiKeyClear">Clear</button>
+        <button type="button" class="modal-btn-secondary" id="apiKeyCancel">Cancel</button>
+        <button type="button" class="modal-btn-primary" id="apiKeySave">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   SAVE / LOAD
+   When this file isn't running inside a Claude.ai artifact (no
+   window.storage), progress is stored in Firebase Realtime Database
+   so it's shared across every device that opens this file — no
+   accounts, one shared family save. localStorage is kept as an
+   offline fallback and as the always-used cache.
+
+   ⚠️ REPLACE this with YOUR Firebase Realtime Database URL.
+   It looks like: https://your-project-id-default-rtdb.firebaseio.com
+   Create a free Firebase project, enable Realtime Database in test
+   mode, and paste its URL below.
+================================================================ */
+const FIREBASE_DB_URL = "https://coach-45ec3-default-rtdb.firebaseio.com/";
+
+// The Gemini API key never goes to Firebase — that database has no
+// login and anyone with the URL can read it, so the key stays local
+// to this browser only.
+function isCloudSynced(key) {
+  return FIREBASE_DB_URL.indexOf("your-project-id") === -1 && key !== API_KEY_STORAGE_KEY;
+}
+
+const storage = (typeof window.storage !== 'undefined' && window.storage) ? window.storage : {
+  async get(key) {
+    if (isCloudSynced(key)) {
+      try {
+        const res = await fetch(`${FIREBASE_DB_URL}/data/${encodeURIComponent(key)}.json`);
+        if (res.ok) {
+          const val = await res.json();
+          if (val !== null && val !== undefined) {
+            try { localStorage.setItem(key, val); } catch (e) {}
+            return { key, value: val };
+          }
+        }
+      } catch (e) {
+        // Cloud unreachable (offline, or FIREBASE_DB_URL not set yet) — fall back to local copy.
+      }
+    }
+    const v = localStorage.getItem(key);
+    return v === null ? null : { key, value: v };
+  },
+  async set(key, value) {
+    // Always keep a local copy so the app still works offline.
+    try { localStorage.setItem(key, value); } catch (e) {}
+    let synced = false;
+    if (isCloudSynced(key)) {
+      try {
+        const res = await fetch(`${FIREBASE_DB_URL}/data/${encodeURIComponent(key)}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(value),
+        });
+        synced = res.ok;
+      } catch (e) { /* offline — local copy above still saved */ }
+    }
+    return { key, value, synced };
+  },
+  async delete(key) {
+    localStorage.removeItem(key);
+    if (isCloudSynced(key)) {
+      try {
+        await fetch(`${FIREBASE_DB_URL}/data/${encodeURIComponent(key)}.json`, { method: "DELETE" });
+      } catch (e) {}
+    }
+    return { key, deleted: true };
+  },
+  async list(prefix) {
+    const keys = Object.keys(localStorage).filter(k => !prefix || k.startsWith(prefix));
+    return { keys };
+  }
+};
+
+const API_KEY_STORAGE_KEY = 'field-notes-gemini-api-key';
+let apiKey = null;
+
+async function loadApiKey() {
+  try {
+    const result = await storage.get(API_KEY_STORAGE_KEY);
+    apiKey = (result && result.value) ? result.value : null;
+  } catch (e) { apiKey = null; }
+}
+
+function geminiUrl(model) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey || "")}`;
+}
+
+function fetchOptions(bodyObj) {
+  return { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyObj) };
+}
+
+// Converts stored {role, content} messages into Gemini's {role, parts} shape.
+// Gemini uses "model" instead of "assistant" for the assistant role.
+function toGeminiContents(msgs) {
+  return msgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+}
+
+const KIDS = { george: 'George', charlie: 'Charlie' };
+const PROFILE_FIELDS = ['age','grade','pronouns','siblings','personality','interests','goals','challenges','other'];
+
+function chatKey(kid) { return `field-notes-messages-${kid}`; }
+function profileKey(kid) { return `field-notes-profile-${kid}`; }
+function notesKey(kid) { return `field-notes-notes-${kid}`; }
+const MAX_NOTES = 60;
+const FAVORITES_KEY = 'field-notes-favorites';
+const FAVORITE_CATEGORIES = ['Bedtime', 'Homework & School', 'Screen Time', 'Emotions & Anxiety', 'Behavior', 'Siblings', 'General'];
+let favorites = [];
+
+function buildSystemPrompt(kidName, profile, notes) {
+  let base = `You are "Field Notes," a warm, grounded, and knowledgeable parenting coach. You are currently talking with a parent about their child ${kidName}. Ground advice in real child development knowledge for this child's age, not generic platitudes.
+
+Your approach:
+- Ask brief, specific follow-up questions when you need more context, rather than guessing.
+- Reference ${kidName}'s profile and past conversation naturally, the way a coach who's worked with this family for a while would.
+- Be honest and willing to gently challenge an approach if it's unlikely to serve the child well, rather than just validating whatever the parent proposes.
+- Keep a conversational, non-clinical tone. Avoid bullet-point overload unless the parent wants a checklist.
+- Keep responses focused — a few short paragraphs, not an essay, unless asked for depth.
+- You are not a substitute for a pediatrician, therapist, or emergency services; say so plainly if something sounds outside coaching (e.g. signs of abuse, self-harm, medical symptoms) and encourage professional support.`;
+
+  const hasProfile = profile && Object.values(profile).some(v => v && v.trim());
+  if (hasProfile) {
+    base += `\n\nHere is what the parent has shared about ${kidName} so far (treat as background, don't just recite it back):\n`;
+    if (profile.age) base += `- Age: ${profile.age}\n`;
+    if (profile.grade) base += `- Grade: ${profile.grade}\n`;
+    if (profile.pronouns) base += `- Pronouns: ${profile.pronouns}\n`;
+    if (profile.siblings) base += `- Siblings/family setup: ${profile.siblings}\n`;
+    if (profile.personality) base += `- Personality/temperament: ${profile.personality}\n`;
+    if (profile.interests) base += `- Interests/strengths: ${profile.interests}\n`;
+    if (profile.challenges) base += `- Current challenges/focus areas: ${profile.challenges}\n`;
+    if (profile.other) base += `- Other context: ${profile.other}\n`;
+  } else {
+    base += `\n\nNo profile details have been filled in for ${kidName} yet — feel free to ask naturally as things come up.`;
+  }
+
+  if (notes && notes.length > 0) {
+    base += `\n\nMemory notes picked up from earlier conversations about ${kidName} (some include the month they were noted \u2014 use that to reference recency naturally, e.g. "last month" or "a few weeks ago," rather than reciting the exact date):\n`;
+    notes.forEach(n => { base += `- ${n}\n`; });
+  }
+
+  return base;
+}
+
+let activeChatKid = null;
+let messages = [];
+let profiles = { george: {}, charlie: {} };
+let notes = { george: [], charlie: [] };
+let sending = false;
+let pendingPrompt = null;
+let profileActiveKid = null;
+
+// ---- Tabs ----
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab + 'View').classList.add('active');
+    if (btn.dataset.tab === 'dashboard') renderDashboard();
+    if (btn.dataset.tab === 'favorites') renderFavorites();
+  });
+});
+
+function goToTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+  if (btn) btn.classList.add('active');
+  document.getElementById(tabName + 'View').classList.add('active');
+}
+
+// ---- Chat elements ----
+const chatPicker = document.getElementById('chatPicker');
+const chatSubheader = document.getElementById('chatSubheader');
+const activeKidLabel = document.getElementById('activeKidLabel');
+const activeKidAge = document.getElementById('activeKidAge');
+const kidAvatar = document.getElementById('kidAvatar');
+const switchKidBtn = document.getElementById('switchKidBtn');
+const chatLog = document.getElementById('chatLog');
+const form = document.getElementById('chatForm');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+const streakEl = document.getElementById('streak');
+const saveBtn = document.getElementById('saveBtn');
+
+document.querySelectorAll('#chatPicker .kid-card').forEach(card => {
+  card.addEventListener('click', () => selectChatKid(card.dataset.kid));
+});
+switchKidBtn.addEventListener('click', () => {
+  activeChatKid = null;
+  chatPicker.style.display = 'flex';
+  chatSubheader.style.display = 'none';
+  chatLog.style.display = 'none';
+  form.style.display = 'none';
+  saveBtn.disabled = true;
+  streakEl.textContent = '';
+});
+
+async function selectChatKid(kid) {
+  activeChatKid = kid;
+  chatPicker.style.display = 'none';
+  chatSubheader.style.display = 'flex';
+  chatLog.style.display = 'flex';
+  form.style.display = 'flex';
+  activeKidLabel.textContent = KIDS[kid];
+  kidAvatar.textContent = (KIDS[kid] || '?').charAt(0);
+  saveBtn.disabled = false;
+  await loadHistory();
+  const age = (profiles[kid] && profiles[kid].age) ? profiles[kid].age.trim() : '';
+  activeKidAge.textContent = age ? ` \u00b7 age ${age}` : '';
+  if (pendingPrompt) {
+    input.value = pendingPrompt;
+    pendingPrompt = null;
+    input.focus();
+  }
+}
+
+function renderEmptyState() {
+  chatLog.innerHTML = `
+    <div class="empty-state">
+      <h2>A running notebook, not a one-off chat</h2>
+      <p>Tell me what's on your mind about ${KIDS[activeChatKid]}. I'll remember it next time. Filling in the "Kid's Profile" tab helps too.</p>
+    </div>`;
+}
+
+function dateSeparatorLabel(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const startOf = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((startOf(new Date()) - startOf(d)) / 86400000);
+  if (diffDays <= 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(undefined, sameYear ? { month: 'long', day: 'numeric' } : { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function renderMessages() {
+  if (messages.length === 0) { renderEmptyState(); return; }
+  let lastDay = null;
+  chatLog.innerHTML = messages.map((m, i) => {
+    let sep = '';
+    if (m.at) {
+      const day = new Date(m.at).toDateString();
+      if (day !== 'Invalid Date' && day !== lastDay) {
+        const label = dateSeparatorLabel(m.at);
+        if (label) sep = `<div class="date-sep">${escapeHtml(label)}</div>`;
+        lastDay = day;
+      }
+    }
+    if (m.role === 'user') {
+      return `${sep}<div class="msg-wrap user-wrap" data-idx="${i}"><div class="msg user">${escapeHtml(m.content)}</div></div>`;
+    }
+    const starred = isFavorited(activeChatKid, m);
+    const followups = Array.isArray(m.followups) ? m.followups : [];
+    const followupHtml = followups.length ? `<div class="followup-row">${followups.map(f =>
+      `<button type="button" class="followup-chip" data-text="${escapeHtml(f)}">${escapeHtml(f)}</button>`
+    ).join('')}</div>` : '';
+    return `${sep}<div class="msg-wrap coach-wrap" data-idx="${i}">
+      <div class="msg coach">${escapeHtml(m.content)}</div>
+      <button type="button" class="star-btn ${starred ? 'starred' : ''}" data-idx="${i}" title="${starred ? 'Saved to favorites' : 'Save this advice'}">${starred ? '\u2605 Saved' : '\u2606 Save this advice'}</button>
+      ${followupHtml}
+    </div>`;
+  }).join('');
+  chatLog.querySelectorAll('.star-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleFavorite(activeChatKid, parseInt(btn.dataset.idx, 10)));
+  });
+  chatLog.querySelectorAll('.followup-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      input.value = btn.dataset.text;
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+      input.focus();
+    });
+  });
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function scrollToMessageIdx(idx) {
+  const el = chatLog.querySelector(`.msg-wrap[data-idx="${idx}"] .msg`);
+  if (!el) return;
+  el.scrollIntoView({ block: 'center' });
+  el.classList.add('highlight-flash');
+  setTimeout(() => el.classList.remove('highlight-flash'), 2400);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function updateStreak() {
+  const count = messages.filter(m => m.role === 'user').length;
+  streakEl.textContent = count === 0 ? 'new notebook' : `${count} entr${count === 1 ? 'y' : 'ies'} logged`;
+}
+
+async function loadHistory() {
+  try {
+    const result = await storage.get(chatKey(activeChatKid), false);
+    messages = (result && result.value) ? JSON.parse(result.value) : [];
+  } catch (e) { messages = []; }
+  try {
+    const result = await storage.get(profileKey(activeChatKid), false);
+    profiles[activeChatKid] = (result && result.value) ? JSON.parse(result.value) : {};
+  } catch (e) { profiles[activeChatKid] = {}; }
+  try {
+    const result = await storage.get(notesKey(activeChatKid), false);
+    notes[activeChatKid] = (result && result.value) ? JSON.parse(result.value) : [];
+  } catch (e) { notes[activeChatKid] = []; }
+  renderMessages();
+  updateStreak();
+}
+
+async function saveNotes(kid) {
+  try { await storage.set(notesKey(kid), JSON.stringify(notes[kid] || []), false); }
+  catch (e) { console.error('Could not save notes', e); }
+}
+
+async function postProcessReply(kid, userText, replyText, kidMessagesRef, replyIdx) {
+  if (!apiKey) return;
+  try {
+    const existing = notes[kid] || [];
+    const prompt = `From this single exchange between a parent and their parenting coach about their child ${KIDS[kid]}, do two things.
+
+1) List any NEW durable facts worth remembering long-term about the child (preferences, ongoing situations, diagnoses, personality traits, recurring issues, milestones). Skip anything trivial, one-off, or already covered by these existing notes:
+${existing.map(n => '- ' + n).join('\n') || '(none yet)'}
+
+2) Suggest exactly 3 short, natural follow-up questions written from the PARENT's point of view (first person, e.g. "What if he refuses the choices?") that would reasonably continue this conversation. Keep each under 12 words.
+
+Exchange:
+Parent: ${userText}
+Coach: ${replyText}
+
+Respond with ONLY JSON in exactly this shape, no other text: {"notes": ["..."], "followups": ["...", "...", "..."]}`;
+
+    const response = await fetch(geminiUrl("gemini-2.5-flash"), fetchOptions({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 400 }
+    }));
+    const data = await response.json();
+    if (data && data.error) throw new Error(data.error.message || 'api-error');
+    const replyText = data.candidates && data.candidates[0] && data.candidates[0].content &&
+      data.candidates[0].content.parts && data.candidates[0].content.parts.map(p => p.text || '').join('');
+    if (!replyText) return;
+    const cleaned = replyText.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    const newFacts = Array.isArray(parsed.notes) ? parsed.notes : [];
+    const followups = Array.isArray(parsed.followups) ? parsed.followups.slice(0, 3) : [];
+
+    if (newFacts.length > 0) {
+      const monthYear = new Date().toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      const taggedFacts = newFacts.map(f => `${f} (noted ${monthYear})`);
+      notes[kid] = [...(notes[kid] || []), ...taggedFacts].slice(-MAX_NOTES);
+      await saveNotes(kid);
+      if (profileActiveKid === kid) renderMemoryList(kid);
+    }
+
+    if (followups.length > 0 && kidMessagesRef[replyIdx]) {
+      kidMessagesRef[replyIdx].followups = followups;
+      try { await storage.set(chatKey(kid), JSON.stringify(kidMessagesRef), false); } catch (e) { /* ignore */ }
+      if (activeChatKid === kid && messages === kidMessagesRef) renderMessages();
+    }
+  } catch (e) {
+    // Silent failure — notes and follow-ups are a bonus, not critical path
+    console.error('Post-process reply failed', e);
+  }
+}
+
+async function saveHistory() {
+  try { return await storage.set(chatKey(activeChatKid), JSON.stringify(messages), false); }
+  catch (e) { console.error('Could not save history', e); return null; }
+}
+
+async function loadFavorites() {
+  try {
+    const result = await storage.get(FAVORITES_KEY, false);
+    favorites = (result && result.value) ? JSON.parse(result.value) : [];
+  } catch (e) { favorites = []; }
+  if (activeChatKid) renderMessages();
+}
+
+async function saveFavorites() {
+  try { await storage.set(FAVORITES_KEY, JSON.stringify(favorites), false); }
+  catch (e) { console.error('Could not save favorites', e); }
+}
+
+function isFavorited(kid, msg) {
+  return favorites.some(f => f.kid === kid && f.at === msg.at && f.content === msg.content);
+}
+
+function guessCategory(text) {
+  const t = text.toLowerCase();
+  if (/bedtime|sleep|nap/.test(t)) return 'Bedtime';
+  if (/homework|school|grade|teacher|class/.test(t)) return 'Homework & School';
+  if (/screen|phone|tablet|video game|ipad/.test(t)) return 'Screen Time';
+  if (/anxious|anxiety|fear|scared|worry|worried/.test(t)) return 'Emotions & Anxiety';
+  if (/sibling|brother|sister/.test(t)) return 'Siblings';
+  if (/tantrum|meltdown|defian|behavior|listen/.test(t)) return 'Behavior';
+  return 'General';
+}
+
+async function toggleFavorite(kid, idx) {
+  const msg = messages[idx];
+  if (!msg || msg.role !== 'assistant') return;
+  const existingIdx = favorites.findIndex(f => f.kid === kid && f.at === msg.at && f.content === msg.content);
+  if (existingIdx >= 0) {
+    favorites.splice(existingIdx, 1);
+  } else {
+    favorites.push({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      kid,
+      content: msg.content,
+      at: msg.at,
+      category: guessCategory(msg.content),
+      savedAt: new Date().toISOString()
+    });
+  }
+  await saveFavorites();
+  renderMessages();
+}
+
+const favoritesBody = document.getElementById('favoritesBody');
+
+function renderFavorites() {
+  if (!favoritesBody) return;
+  if (favorites.length === 0) {
+    favoritesBody.innerHTML = `<p class="fav-empty">Nothing saved yet — tap "Save this advice" under any coach reply in Chat to keep it here.</p>`;
+    return;
+  }
+  const byCategory = {};
+  favorites.forEach(f => {
+    const cat = f.category || 'General';
+    (byCategory[cat] = byCategory[cat] || []).push(f);
+  });
+  const order = FAVORITE_CATEGORIES.filter(c => byCategory[c]).concat(Object.keys(byCategory).filter(c => !FAVORITE_CATEGORIES.includes(c)));
+
+  favoritesBody.innerHTML = order.map(cat => {
+    const items = byCategory[cat].slice().sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+    return `<div class="fav-group">
+      <p class="fav-group-title">${escapeHtml(cat)} (${items.length})</p>
+      ${items.map(f => `
+        <div class="fav-card" data-id="${f.id}">
+          <div class="fav-meta">
+            <span class="result-kid">${escapeHtml(KIDS[f.kid] || f.kid)}</span>
+            <span>${escapeHtml(relativeDay(f.at) || '')}</span>
+          </div>
+          <p class="fav-text">${escapeHtml(f.content)}</p>
+          <div class="fav-controls">
+            <select class="fav-category-select" data-id="${f.id}">
+              ${FAVORITE_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+            <button type="button" class="fav-remove-btn" data-id="${f.id}" title="Remove">&times;</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('');
+
+  favoritesBody.querySelectorAll('.fav-category-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const fav = favorites.find(f => f.id === sel.dataset.id);
+      if (fav) { fav.category = sel.value; await saveFavorites(); renderFavorites(); }
+    });
+  });
+  favoritesBody.querySelectorAll('.fav-remove-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      favorites = favorites.filter(f => f.id !== btn.dataset.id);
+      await saveFavorites();
+      renderFavorites();
+      if (activeChatKid) renderMessages();
+    });
+  });
+}
+
+// ---- Search ----
+const searchForm = document.getElementById('searchForm');
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+function buildSnippet(text, query) {
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  const idx = lower.indexOf(q);
+  let snippet = text;
+  if (idx >= 0) {
+    const start = Math.max(0, idx - 60);
+    const end = Math.min(text.length, idx + q.length + 60);
+    snippet = (start > 0 ? '\u2026' : '') + text.slice(start, end) + (end < text.length ? '\u2026' : '');
+  } else if (text.length > 140) {
+    snippet = text.slice(0, 140) + '\u2026';
+  }
+  const escaped = escapeHtml(snippet);
+  if (!q) return escaped;
+  const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+  return escaped.replace(re, '<mark>$1</mark>');
+}
+
+async function performSearch(query) {
+  const q = query.trim();
+  if (!q) {
+    searchResults.innerHTML = '';
+    return;
+  }
+  searchResults.innerHTML = `<p class="search-status">Searching\u2026</p>`;
+  const allResults = [];
+  for (const kid of Object.keys(KIDS)) {
+    let kidMessages = [];
+    try {
+      const result = await storage.get(chatKey(kid), false);
+      kidMessages = (result && result.value) ? JSON.parse(result.value) : [];
+    } catch (e) { kidMessages = []; }
+    kidMessages.forEach((m, i) => {
+      if (m.content && m.content.toLowerCase().includes(q.toLowerCase())) {
+        allResults.push({ kid, idx: i, msg: m });
+      }
+    });
+  }
+  allResults.sort((a, b) => new Date(b.msg.at || 0) - new Date(a.msg.at || 0));
+
+  if (allResults.length === 0) {
+    searchResults.innerHTML = `<p class="search-empty">No matches for "${escapeHtml(q)}" yet.</p>`;
+    return;
+  }
+
+  searchResults.innerHTML = `<div class="results-list">${allResults.map(r => `
+    <div class="result-card" data-kid="${r.kid}" data-idx="${r.idx}">
+      <div class="result-meta">
+        <span class="result-kid">${escapeHtml(KIDS[r.kid])} \u00b7 ${r.msg.role === 'user' ? 'you said' : 'coach said'}</span>
+        <span>${escapeHtml(relativeDay(r.msg.at) || '')}</span>
+      </div>
+      <p class="result-snippet">${buildSnippet(r.msg.content, q)}</p>
+    </div>
+  `).join('')}</div>`;
+
+  searchResults.querySelectorAll('.result-card').forEach(card => {
+    card.addEventListener('click', async () => {
+      goToTab('chat');
+      const kid = card.dataset.kid;
+      const idx = parseInt(card.dataset.idx, 10);
+      if (activeChatKid !== kid) {
+        await selectChatKid(kid);
+      }
+      setTimeout(() => scrollToMessageIdx(idx), 60);
+    });
+  });
+}
+
+if (searchForm) {
+  searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    performSearch(searchInput.value);
+  });
+}
+document.querySelectorAll('.search-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    searchInput.value = chip.dataset.q;
+    performSearch(chip.dataset.q);
+  });
+});
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.id = 'typingIndicator';
+  div.innerHTML = 'thinking<span>.</span><span>.</span><span>.</span>';
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+function hideTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+async function sendMessage(text) {
+  messages.push({ role: 'user', content: text, at: new Date().toISOString() });
+  renderMessages();
+  updateStreak();
+  await saveHistory();
+
+  showTyping();
+  sending = true;
+  sendBtn.disabled = true;
+
+  let replyForNotes = null;
+  let replyIdx = -1;
+  const kidAtSendTime = activeChatKid;
+  const kidMessagesRef = messages;
+
+  try {
+    if (!apiKey) {
+      throw new Error('missing-api-key');
+    }
+    const recent = messages.slice(-40);
+    const response = await fetch(geminiUrl("gemini-2.5-pro"), fetchOptions({
+      system_instruction: { parts: [{ text: buildSystemPrompt(KIDS[activeChatKid], profiles[activeChatKid], notes[activeChatKid]) }] },
+      contents: toGeminiContents(recent),
+      generationConfig: { maxOutputTokens: 1000 }
+    }));
+    const data = await response.json();
+    if (data && data.error) throw new Error(data.error.message || 'api-error');
+    const replyText = data.candidates && data.candidates[0] && data.candidates[0].content &&
+      data.candidates[0].content.parts && data.candidates[0].content.parts.map(p => p.text || '').join('');
+    const reply = replyText || "Sorry, I didn't catch that — could you try again?";
+    messages.push({ role: 'assistant', content: reply, at: new Date().toISOString() });
+    replyIdx = messages.length - 1;
+    replyForNotes = reply;
+  } catch (e) {
+    if (e.message === 'missing-api-key') {
+      messages.push({ role: 'assistant', content: 'I need a Gemini API key to reach the model. Click "api key" at the top to add yours \u2014 it stays in this browser only.', at: new Date().toISOString() });
+    } else {
+      messages.push({ role: 'assistant', content: `Something went wrong reaching the coach (${e.message || 'unknown error'}). Please try sending that again.`, at: new Date().toISOString() });
+    }
+  }
+
+  hideTyping();
+  sending = false;
+  sendBtn.disabled = false;
+  renderMessages();
+  updateStreak();
+  await saveHistory();
+
+  if (replyForNotes) {
+    postProcessReply(kidAtSendTime, text, replyForNotes, kidMessagesRef, replyIdx);
+  }
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text || sending || !activeChatKid) return;
+  input.value = '';
+  input.style.height = 'auto';
+  await sendMessage(text);
+});
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    form.requestSubmit();
+  }
+});
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+saveBtn.addEventListener('click', async () => {
+  if (!activeChatKid || saveBtn.disabled) return;
+  const original = saveBtn.textContent;
+  saveBtn.disabled = true;
+  try {
+    const result = await saveHistory();
+    saveBtn.textContent = result && result.synced ? 'saved to cloud' : 'saved (local)';
+  } catch (e) {
+    saveBtn.textContent = 'error';
+  }
+  setTimeout(() => {
+    saveBtn.textContent = original;
+    saveBtn.disabled = false;
+  }, 1400);
+});
+
+// ---- Profile ----
+const profilePicker = document.getElementById('profilePicker');
+const profileEdit = document.getElementById('profileEdit');
+const profileForm = document.getElementById('profileForm');
+const profileHeading = document.getElementById('profileHeading');
+const profileBackBtn = document.getElementById('profileBackBtn');
+const savedNote = document.getElementById('savedNote');
+
+document.querySelectorAll('#profilePicker .kid-card').forEach(card => {
+  card.addEventListener('click', () => openProfileEdit(card.dataset.kid));
+});
+profileBackBtn.addEventListener('click', () => {
+  profileActiveKid = null;
+  profileEdit.classList.remove('active');
+  profilePicker.style.display = 'flex';
+  refreshProfileMeta();
+});
+
+async function loadAllProfiles() {
+  for (const kid of Object.keys(KIDS)) {
+    try {
+      const result = await storage.get(profileKey(kid), false);
+      profiles[kid] = (result && result.value) ? JSON.parse(result.value) : {};
+    } catch (e) { profiles[kid] = {}; }
+    try {
+      const result = await storage.get(notesKey(kid), false);
+      notes[kid] = (result && result.value) ? JSON.parse(result.value) : [];
+    } catch (e) { notes[kid] = []; }
+  }
+  refreshProfileMeta();
+  renderDashboard();
+}
+
+function refreshProfileMeta() {
+  Object.keys(KIDS).forEach(kid => {
+    const el = document.getElementById(kid + '-meta');
+    const p = profiles[kid] || {};
+    const bits = [];
+    if (p.age) bits.push(`age ${p.age}`);
+    if (p.grade) bits.push(p.grade);
+    el.textContent = bits.length ? bits.join(' · ') : 'no profile yet';
+  });
+}
+
+function openProfileEdit(kid) {
+  profileActiveKid = kid;
+  profileHeading.textContent = `${KIDS[kid]}'s Profile`;
+  profileBackBtn.textContent = '\u2190 Back to George & Charlie';
+  const p = profiles[kid] || {};
+  PROFILE_FIELDS.forEach(f => {
+    const el = document.getElementById('p-' + f);
+    if (el) el.value = p[f] || '';
+  });
+  profilePicker.style.display = 'none';
+  profileEdit.classList.add('active');
+  renderMemoryList(kid);
+}
+
+const memoryList = document.getElementById('memoryList');
+const addNoteForm = document.getElementById('addNoteForm');
+const addNoteInput = document.getElementById('addNoteInput');
+
+let editingNoteIndex = null;
+
+function renderMemoryList(kid) {
+  const kidNotes = notes[kid] || [];
+  memoryList.innerHTML = kidNotes.map((note, i) => {
+    if (i === editingNoteIndex) {
+      return `<li class="memory-item editing" data-index="${i}">
+        <textarea class="edit-input" rows="2">${escapeHtml(note)}</textarea>
+        <div class="edit-row-actions">
+          <button type="button" class="cancel-edit-btn" data-action="cancel">Cancel</button>
+          <button type="button" class="save-edit-btn" data-action="save" data-index="${i}">Save</button>
+        </div>
+      </li>`;
+    }
+    return `<li class="memory-item" data-index="${i}">
+      <span>${escapeHtml(note)}</span>
+      <div class="memory-actions">
+        <button type="button" data-action="edit" data-index="${i}" title="Edit note">Edit</button>
+        <button type="button" class="delete-btn" data-action="delete" data-index="${i}" title="Remove note">&times;</button>
+      </div>
+    </li>`;
+  }).join('');
+
+  memoryList.querySelectorAll('button').forEach(btn => {
+    const action = btn.dataset.action;
+    btn.addEventListener('click', async () => {
+      const idx = btn.dataset.index !== undefined ? parseInt(btn.dataset.index, 10) : null;
+      if (action === 'delete') {
+        notes[profileActiveKid].splice(idx, 1);
+        await saveNotes(profileActiveKid);
+        renderMemoryList(profileActiveKid);
+      } else if (action === 'edit') {
+        editingNoteIndex = idx;
+        renderMemoryList(profileActiveKid);
+        const textarea = memoryList.querySelector('.edit-input');
+        if (textarea) { textarea.focus(); textarea.setSelectionRange(textarea.value.length, textarea.value.length); }
+      } else if (action === 'cancel') {
+        editingNoteIndex = null;
+        renderMemoryList(profileActiveKid);
+      } else if (action === 'save') {
+        const li = memoryList.querySelector(`li[data-index="${idx}"]`);
+        const textarea = li.querySelector('.edit-input');
+        const newText = textarea.value.trim();
+        if (newText) {
+          notes[profileActiveKid][idx] = newText;
+        } else {
+          notes[profileActiveKid].splice(idx, 1);
+        }
+        editingNoteIndex = null;
+        await saveNotes(profileActiveKid);
+        renderMemoryList(profileActiveKid);
+      }
+    });
+  });
+}
+
+addNoteForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!profileActiveKid) return;
+  const text = addNoteInput.value.trim();
+  if (!text) return;
+  notes[profileActiveKid] = [...(notes[profileActiveKid] || []), text].slice(-MAX_NOTES);
+  addNoteInput.value = '';
+  await saveNotes(profileActiveKid);
+  renderMemoryList(profileActiveKid);
+});
+
+profileForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!profileActiveKid) return;
+  const p = {};
+  PROFILE_FIELDS.forEach(f => {
+    const el = document.getElementById('p-' + f);
+    p[f] = el.value.trim();
+  });
+  profiles[profileActiveKid] = p;
+  try {
+    const result = await storage.set(profileKey(profileActiveKid), JSON.stringify(p), false);
+    savedNote.textContent = result && result.synced ? 'Saved to the cloud' : 'Saved on this device only';
+  } catch (e) {
+    savedNote.textContent = 'Could not save — try again';
+  }
+  savedNote.classList.add('show');
+  refreshProfileMeta();
+  renderDashboard();
+  setTimeout(() => savedNote.classList.remove('show'), 2200);
+});
+
+// ---- Learn tabs quick-ask ----
+document.querySelectorAll('.ask-link').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelector('.tab-btn[data-tab="chat"]').classList.add('active');
+    document.getElementById('chatView').classList.add('active');
+    if (activeChatKid) {
+      input.value = btn.dataset.prompt;
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+      input.focus();
+    } else {
+      pendingPrompt = btn.dataset.prompt;
+    }
+  });
+});
+
+// ---- API key ----
+const apiKeyBtn = document.getElementById('apiKeyBtn');
+const apiKeyModal = document.getElementById('apiKeyModal');
+const apiKeyInput = document.getElementById('apiKeyInput');
+
+function openApiKeyModal() {
+  apiKeyInput.value = apiKey || '';
+  apiKeyModal.style.display = 'flex';
+  apiKeyInput.focus();
+}
+function closeApiKeyModal() { apiKeyModal.style.display = 'none'; }
+
+apiKeyBtn.style.display = 'inline-block';
+apiKeyBtn.addEventListener('click', openApiKeyModal);
+document.getElementById('apiKeyCancel').addEventListener('click', closeApiKeyModal);
+document.getElementById('apiKeySave').addEventListener('click', async () => {
+  const val = apiKeyInput.value.trim();
+  apiKey = val || null;
+  try {
+    if (apiKey) await storage.set(API_KEY_STORAGE_KEY, apiKey);
+    else await storage.delete(API_KEY_STORAGE_KEY);
+  } catch (e) { console.error('Could not save API key', e); }
+  closeApiKeyModal();
+});
+document.getElementById('apiKeyClear').addEventListener('click', async () => {
+  apiKey = null;
+  apiKeyInput.value = '';
+  try { await storage.delete(API_KEY_STORAGE_KEY); } catch (e) {}
+  closeApiKeyModal();
+});
+apiKeyModal.addEventListener('click', (e) => { if (e.target === apiKeyModal) closeApiKeyModal(); });
+
+// ---- Dashboard ----
+function relativeDay(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const startOf = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((startOf(new Date()) - startOf(d)) / 86400000);
+  if (diffDays <= 0) return 'today';
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function pickLessonCard(kid) {
+  const age = parseInt((profiles[kid] && profiles[kid].age) || '', 10);
+  const tabId = (!isNaN(age) && age <= 7) ? 'sevenView' : 'nineView';
+  const cards = Array.from(document.querySelectorAll('#' + tabId + ' .learn-card')).filter(c => c.querySelector('.ask-link'));
+  if (cards.length === 0) return null;
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+  const kidOffset = Object.keys(KIDS).indexOf(kid);
+  const idx = ((dayOfYear + kidOffset) % cards.length + cards.length) % cards.length;
+  const card = cards[idx];
+  return {
+    tab: tabId === 'nineView' ? 'nine' : 'seven',
+    title: card.querySelector('h3').textContent,
+    prompt: card.querySelector('.ask-link').dataset.prompt
+  };
+}
+
+async function renderDashboard() {
+  let bestKid = null, bestMsg = null;
+  for (const kid of Object.keys(KIDS)) {
+    const p = profiles[kid] || {};
+
+    const metaEl = document.getElementById(kid + '-dash-meta');
+    const bits = [];
+    if (p.age) bits.push(`age ${p.age}`);
+    if (p.grade) bits.push(p.grade);
+    metaEl.textContent = bits.length ? ' \u2014 ' + bits.join(' \u00b7 ') : '';
+
+    document.getElementById(kid + '-dash-goals').textContent =
+      (p.goals && p.goals.trim()) ? p.goals.trim() : 'No goals set yet \u2014 add some in Kid\'s Profile.';
+
+    document.getElementById(kid + '-dash-challenges').textContent =
+      (p.challenges && p.challenges.trim()) ? p.challenges.trim() : 'No active challenges noted yet.';
+
+    const lesson = pickLessonCard(kid);
+    const lessonTitleEl = document.getElementById(kid + '-dash-lesson-title');
+    const lessonBtn = document.getElementById(kid + '-dash-lesson-btn');
+    const lessonTabBtn = document.getElementById(kid + '-dash-lesson-tab');
+    if (lesson) {
+      lessonTitleEl.textContent = lesson.title;
+      lessonBtn.dataset.prompt = lesson.prompt;
+      lessonTabBtn.dataset.tab = lesson.tab;
+      lessonBtn.style.display = '';
+      lessonTabBtn.style.display = '';
+    } else {
+      lessonTitleEl.textContent = 'No lessons available right now.';
+      lessonBtn.style.display = 'none';
+      lessonTabBtn.style.display = 'none';
+    }
+
+    let lastMsg = null;
+    try {
+      const result = await storage.get(chatKey(kid));
+      const kidMessages = (result && result.value) ? JSON.parse(result.value) : [];
+      if (kidMessages.length > 0) lastMsg = kidMessages[kidMessages.length - 1];
+    } catch (e) { /* no history yet */ }
+
+    const lastEl = document.getElementById(kid + '-dash-last');
+    if (lastMsg) {
+      const when = relativeDay(lastMsg.at);
+      const preview = lastMsg.content.length > 140 ? lastMsg.content.slice(0, 140) + '\u2026' : lastMsg.content;
+      lastEl.innerHTML = (when ? `<span class="dash-when">${escapeHtml(when)} \u2014 </span>` : '') + escapeHtml(preview);
+      if (lastMsg.at && (!bestMsg || new Date(lastMsg.at) > new Date(bestMsg.at))) {
+        bestKid = kid;
+        bestMsg = lastMsg;
+      }
+    } else {
+      lastEl.textContent = 'No conversations yet.';
+    }
+  }
+  updateContinueBanner(bestKid, bestMsg);
+}
+
+function updateContinueBanner(kid, lastMsg) {
+  const banner = document.getElementById('continueBanner');
+  const bannerText = document.getElementById('continueBannerText');
+  if (!banner || !bannerText) return;
+  if (!kid || !lastMsg) { banner.style.display = 'none'; return; }
+  const when = relativeDay(lastMsg.at) || 'recently';
+  bannerText.innerHTML = `Continue previous conversation with <strong>${escapeHtml(KIDS[kid])}</strong> \u2014 ${escapeHtml(when)}`;
+  banner.dataset.kid = kid;
+  banner.style.display = 'flex';
+}
+
+document.getElementById('continueBannerBtn').addEventListener('click', async () => {
+  const kid = document.getElementById('continueBanner').dataset.kid;
+  if (!kid) return;
+  goToTab('chat');
+  await selectChatKid(kid);
+});
+
+document.querySelectorAll('.dash-continue-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    goToTab('chat');
+    await selectChatKid(btn.dataset.kid);
+  });
+});
+
+document.querySelectorAll('.dash-lesson-ask').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    goToTab('chat');
+    if (activeChatKid !== btn.dataset.kid) await selectChatKid(btn.dataset.kid);
+    if (activeChatKid) {
+      input.value = btn.dataset.prompt || '';
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+      input.focus();
+    }
+  });
+});
+
+document.querySelectorAll('.dash-lesson-tab').forEach(btn => {
+  btn.addEventListener('click', () => goToTab(btn.dataset.tab));
+});
+
+loadApiKey();
+loadAllProfiles();
+loadFavorites();
+</script>
+</body>
+</html>
